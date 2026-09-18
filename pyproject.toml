@@ -16,15 +16,18 @@ classifiers = [
     
 ]
 dependencies = [
+    "bs4>=0.0.2",
     "pip",
     "python-dotenv",
+    "requests>=2.34.2",
     "ruff",
+    "yarl>=1.25.1",
 ]
 requires-python = "~=3.14.0"
 
 
 [tool.ruff]
-line-length = 99
+line-length = 80
 src = ["agro"]
 include = ["pyproject.toml", "agro/**/*.py"]
 
