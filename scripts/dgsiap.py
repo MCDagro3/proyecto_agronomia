@@ -1,27 +1,22 @@
 """
-    Extraccion de datos desde DGSIAP.
+    Conexión al conjunto de datos abiertos DGSIAP y creación del diccionario maestro.
 """
-
 # Importamos librerias requeridas
 import requests
 from bs4 import BeautifulSoup
 import yarl
 from pathlib import Path
-import os
 import re
+from scripts.config import MAIN_URL
 
-# Definimos la ruta de descarga de archivos.
-REF_PATH = Path(__file__).parent  #  Fijamos la ruta con respecto a este script
-DATA_PATH = REF_PATH / ".." / "data" / "external" #  Debemos realizar esto para mejor compatibilidad con jupyter notebooks
 
 
 # Definimos las urls a utilizar
 ## URL BASE: De esta parten las siguientes
-MAIN_URL = yarl.URL("https://nube.agricultura.gob.mx")
+
+# MAIN_URL = yarl.URL("https://nube.agricultura.gob.mx")
 ## Pagina principal: De aqui obtendremos la información
 PAGE_URL = MAIN_URL / "datosAbiertos/"
-## Fuente de datos.
-DOWNLOAD_URL = MAIN_URL / "index.php"
 
 ## Menu para elegir entre los datos agricolas y los datos pecuarios.
 print("Bienvenido al script de descarga de datos abiertos del DGSIAP.")
@@ -39,6 +34,7 @@ except KeyError:
     print("Categoria no valida. Por favor, ingrese una categoria valida.")
     exit(1)
 
+
 # Intento de conexión
 response = requests.get(BOT_URL)
 if response.status_code != 200:
@@ -47,10 +43,13 @@ if response.status_code != 200:
 else:
     print("Conexion Establecida")
 
+
 # Mandamos la información para su recopilación
 page = BeautifulSoup(response.content, "lxml")
 
+# Definimos nuestra zona de trabajo.
 content = page.find("main")
+# Dividiremos la pagina en sus secciones principales
 sections = content.find_all("section", recursive=False)
 
 def welcome():
@@ -77,7 +76,6 @@ def basic_intro():
     print(raw_intro[-1])
 
 
-
 def blocks_intro():
     history = sections[3]
     data_title = history.find("div", {"class":"mb-0 h5 font-weight-bold section-title"}).text
@@ -88,13 +86,6 @@ def blocks_intro():
     data_blocks_f = [f"{k + 1}. {b}" for k, b in enumerate(data_blocks.keys())]
     print(f"Los datos se encuentran divididos en 3 bloques:\n\n{"\n".join(data_blocks_f)}")
     return data_blocks
-
-data_blocks=blocks_intro()
-
-last = sections[2]
-search_title_section=last.find("div")
-last_title = search_title_section.text.strip("\n").strip("\t")[:-1]
-last_title
 
 
 def get_catalog(sec=sections[2]):
@@ -124,69 +115,40 @@ def get_data(sec=sections[2]):
     return data_info, data_link
 
 
-def parse_link(url, base=DOWNLOAD_URL):
-    y_url= yarl.URL(url)
-    link = base.with_query(y_url.query)
-    return link
+def dict_master():
+    content = page.find("main")
+    sections = content.find_all("section", recursive=False)
+    data_blocks=blocks_intro()
+    last = sections[2]
+    search_title_section=last.find("div")
+    last_title = search_title_section.text.strip("\n").strip("\t")[:-1]
 
-def get_filename(link):
-    head = requests.head(link)
-    for u, v in head.headers.items():
-        try:
-            if v.index("filename"):
-                name=v.split("filename=")[-1]
-                name=name[1:-1]
-                break
-        except:
-            pass
-    return name
-    
+    # Diccionario de Datos
+    data_dicts = {db:{} for db in data_blocks.keys()}
 
-def download(link, filename, path=DATA_PATH, **kwargs):
-    hint = kwargs.get("hint", 0)
-    filelink = link / filename
-    filepath = path / filename
-    if hint:
-        check = input(f"El archivo {filename} se guardara en {filepath}.\n¿Deseas continuar? Responda NO si quiere cancelar la descarga")
-        if check == "NO":
-            print("Revise el archivo a descargar\n y/o la ruta donde guardarlos en dgsiap.py")
-    if not os.path.exists(filepath):
-        try:
-            odata = requests.get(link)
-        except e:
-            print(f"Error {e}. Status Code {odata.status_code}")
-        print("La conexión procedio. Comenzamos con la descarga")
-        with odata as data:
-            with open(filepath, "wb") as f:
-                f.write(data.content)
-        print(f"Archivo {filename} descargado correctamente")
-        print(f"Descargado el {date.today()}")
-        print(f"Se encuentra en {str(filepath).split("..")[-1]}")
-    else:
-        print(f"El archivo ya fue descargado. Se encuentra en {str(filepath).split("..")[-1]}")
+    history_blocknames = list(data_dicts.keys())
+    for db in history_blocknames:
+        if db == history_blocknames[0]:
+            data_dicts[db]["metadata"], data_dicts[db]["metadata"] = get_catalog(sec=last)
+            continue
+        block = data_blocks[db]
+        data_dicts[db]["metadata"], data_dicts[db]["info"] =  get_catalog(sec=block)
 
-# Diccionario de Datos
-data_dicts = {db:{} for db in data_blocks.keys()}
+    data_history = {db:[] for db in data_blocks.keys()}
 
-history_blocknames = list(data_dicts.keys())
-for db in history_blocknames:
-    if db == history_blocknames[0]:
-        data_dicts[db]["metadata"], data_dicts[db]["metadata"] = get_catalog()
-        continue
-    block = data_blocks[db]
-    data_dicts[db]["metadata"], data_dicts[db]["info"] =  get_catalog(sec=block)
-
-data_history = {db:[] for db in data_blocks.keys()}
-
-for db in data_history.keys():
-    block = data_blocks[db]
-    con_data = block.find_all("a", {"class":"dl-btn"})
-    href_data = [yarl.URL(a['href']) for a in con_data]
-    data_history[db] += href_data
+    for db in data_history.keys():
+        block = data_blocks[db]
+        con_data = block.find_all("a", {"class":"dl-btn"})
+        href_data = [yarl.URL(a['href']) for a in con_data]
+        data_history[db] += href_data
 
 
-# Conglomerado en un solo dicctionario. 
-assert set(data_history.keys()) == set(data_dicts.keys()), "Revise los bloques utilizados"
+    # Conglomerado en un solo dicctionario. 
+    assert set(data_history.keys()) == set(data_dicts.keys()), "Revise los bloques utilizados"
 
-ALLDATA = {b: {"Metadata": data_dicts[b], "Datasets": data_history[b]} for b in data_dicts.keys()}
+    connector = {b: {"Metadata": data_dicts[b],
+                  "Datasets": data_history[b]}
+                   for b in data_dicts.keys()}
+    return connector
 
+print(f"Usted escogio {value}")
