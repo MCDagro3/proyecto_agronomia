@@ -3,7 +3,7 @@ requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "agro"
+name = "scripts"
 version = "0.0.1"
 description = "Analisis Exploratorio de Datos de Datos Abiertos del DGSIAP."
 authors = [
@@ -32,13 +32,13 @@ requires-python = "~=3.14.0"
 
 [tool.ruff]
 line-length = 80
-src = ["agro"]
-include = ["pyproject.toml", "agro/**/*.py"]
+src = ["scripts"]
+include = ["pyproject.toml", "scripts/**/*.py"]
 
 [tool.ruff.lint]
 extend-select = ["I"]  # Add import sorting
 
 [tool.ruff.lint.isort]
-known-first-party = ["agro"]
+known-first-party = ["scripts"]
 force-sort-within-sections = true
 
