@@ -7,10 +7,12 @@ import requests
 from bs4 import BeautifulSoup
 import yarl
 from pathlib import Path
+import os
 
 # Definimos la ruta de descarga de archivos.
+REF_PATH = Path(__file__).parent  #  Fijamos la ruta con respecto a este script
+DATA_PATH = REF_PATH / ".." / "data" / "external" #  Debemos realizar esto para mejor compatibilidad con jupyter notebooks
 
-DATA_PATH = Path("data") / "external"
 
 # Definimos las urls a utilizar
 ## URL BASE: De esta parten las siguientes
@@ -45,4 +47,5 @@ if response.status_code != 200:
 # Mandamos la información para su recopilación
 page = BeautifulSoup(response.content, "lxml")
 print("Conexion Establecida")
+
 
