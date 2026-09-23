@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import yarl
 from pathlib import Path
 import os
+import re
 
 # Definimos la ruta de descarga de archivos.
 REF_PATH = Path(__file__).parent  #  Fijamos la ruta con respecto a este script
@@ -43,9 +44,149 @@ response = requests.get(BOT_URL)
 if response.status_code != 200:
     print(f"Error al acceder a la pagina: {response.status_code}")
     exit(1)
+else:
+    print("Conexion Establecida")
 
 # Mandamos la información para su recopilación
 page = BeautifulSoup(response.content, "lxml")
-print("Conexion Establecida")
 
+content = page.find("main")
+sections = content.find_all("section", recursive=False)
+
+def welcome():
+    tree = sections[0]
+    intro_data = []
+    for t in tree.find_all("li"):
+        if t.text!="":
+            intro_data.append(t.text)
+
+    print(f"De parte de la {intro_data[0]} te damos la bienvenida al conjunto de {intro_data[1]} de la {intro_data[2]}")
+
+
+def basic_intro():
+    intro = sections[1]
+    raw_intro=list()
+    for t in intro.find_all("div", recursive=False):
+        if t.text!="":
+            raw_block=(t.text).split("\t")
+            for raw in raw_block:
+                if raw.strip() != "":
+                    raw_intro.append(raw)
+
+    print(f"Conjuntos de {raw_intro[0]} sobre {raw_intro[1]}")
+    print(raw_intro[-1])
+
+
+
+def blocks_intro():
+    history = sections[3]
+    data_title = history.find("div", {"class":"mb-0 h5 font-weight-bold section-title"}).text
+    data_content = history.find("div", {"id":"dataAccordion"})
+    blocks = data_content.find_all("div", recursive=False)
+    data_blocks = {b.find("div", {"class":"d-flex align-items-center"}).text.strip(): b for n, b in enumerate(blocks)}
+    print(f"Los datos historicos se presentan en el espacio denomiado: {data_title}")
+    data_blocks_f = [f"{k + 1}. {b}" for k, b in enumerate(data_blocks.keys())]
+    print(f"Los datos se encuentran divididos en 3 bloques:\n\n{"\n".join(data_blocks_f)}")
+    return data_blocks
+
+data_blocks=blocks_intro()
+
+last = sections[2]
+search_title_section=last.find("div")
+last_title = search_title_section.text.strip("\n").strip("\t")[:-1]
+last_title
+
+
+def get_catalog(sec=sections[2]):
+    block = sec.find("div", {"class":"dict-section"})
+    mini_blocks = block.find_all("div", {"class":re.compile(r"col-12 col-md-6*?")})
+    codebook, metadata = mini_blocks[0], mini_blocks[1]
+    codebook_info = {"title": codebook.find("h2").text, 
+                     "description": codebook.find("p").text,
+                     "download": codebook.find("a")['href']}
+    meta = metadata.find("div")
+    datetype = meta.find_all("div", recursive=False)
+    metadata_info = {"title": meta.find("h4").text,
+                     "state": datetype[0].find("span", {"class":"label"}).text,
+                     "lastdate": datetype[0].find("span", {"class":"value"}).text,
+                     "range": datetype[1].find("span", {"class":"label"}).text,
+                     "size": datetype[1].find("span", {"class":"value"}).text
+                    }
+    return metadata_info, codebook_info
+
+
+def get_data(sec=sections[2]):
+    block = sec.find("div", {"class":"bento-card h-100"})
+    u = block.find_all("div", recursive=False)
+    data_info = [s.text for s in u[0].find_all("span", recursive=False)]
+    data_get = u[1]
+    data_link = data_get.find("a")['href']
+    return data_info, data_link
+
+
+def parse_link(url, base=DOWNLOAD_URL):
+    y_url= yarl.URL(url)
+    link = base.with_query(y_url.query)
+    return link
+
+def get_filename(link):
+    head = requests.head(link)
+    for u, v in head.headers.items():
+        try:
+            if v.index("filename"):
+                name=v.split("filename=")[-1]
+                name=name[1:-1]
+                break
+        except:
+            pass
+    return name
+    
+
+def download(link, filename, path=DATA_PATH, **kwargs):
+    hint = kwargs.get("hint", 0)
+    filelink = link / filename
+    filepath = path / filename
+    if hint:
+        check = input(f"El archivo {filename} se guardara en {filepath}.\n¿Deseas continuar? Responda NO si quiere cancelar la descarga")
+        if check == "NO":
+            print("Revise el archivo a descargar\n y/o la ruta donde guardarlos en dgsiap.py")
+    if not os.path.exists(filepath):
+        try:
+            odata = requests.get(link)
+        except e:
+            print(f"Error {e}. Status Code {odata.status_code}")
+        print("La conexión procedio. Comenzamos con la descarga")
+        with odata as data:
+            with open(filepath, "wb") as f:
+                f.write(data.content)
+        print(f"Archivo {filename} descargado correctamente")
+        print(f"Descargado el {date.today()}")
+        print(f"Se encuentra en {str(filepath).split("..")[-1]}")
+    else:
+        print(f"El archivo ya fue descargado. Se encuentra en {str(filepath).split("..")[-1]}")
+
+# Diccionario de Datos
+data_dicts = {db:{} for db in data_blocks.keys()}
+
+history_blocknames = list(data_dicts.keys())
+for db in history_blocknames:
+    if db == history_blocknames[0]:
+        data_dicts[db]["metadata"], data_dicts[db]["metadata"] = get_catalog()
+        continue
+    block = data_blocks[db]
+    data_dicts[db]["metadata"], data_dicts[db]["info"] =  get_catalog(sec=block)
+
+data_history = {db:[] for db in data_blocks.keys()}
+
+for db in data_history.keys():
+    block = data_blocks[db]
+    con_data = block.find_all("a", {"class":"dl-btn"})
+    href_data = [yarl.URL(a['href']) for a in con_data]
+    data_history[db] += href_data
+
+
+# Conglomerado en un solo dicctionario. 
+assert set(data_history.keys()) == set(data_dicts.keys()), "Revise los bloques utilizados"
+
+ALLDATA = {b: {"Metadata": data_dicts[b], "Datasets": data_history[b]} for b in data_dicts.keys()}
 
