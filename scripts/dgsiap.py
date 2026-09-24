@@ -129,7 +129,7 @@ def dict_master():
     history_blocknames = list(data_dicts.keys())
     for db in history_blocknames:
         if db == history_blocknames[0]:
-            data_dicts[db]["metadata"], data_dicts[db]["metadata"] = get_catalog(sec=last)
+            data_dicts[db]["metadata"], data_dicts[db]["info"] = get_catalog(sec=last)
             continue
         block = data_blocks[db]
         data_dicts[db]["metadata"], data_dicts[db]["info"] =  get_catalog(sec=block)
@@ -145,7 +145,6 @@ def dict_master():
 
     # Conglomerado en un solo dicctionario. 
     assert set(data_history.keys()) == set(data_dicts.keys()), "Revise los bloques utilizados"
-
     connector = {b: {"Metadata": data_dicts[b],
                   "Datasets": data_history[b]}
                    for b in data_dicts.keys()}
