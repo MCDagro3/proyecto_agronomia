@@ -266,7 +266,7 @@ def descargar_clima_estado(
     anio_inicio: int = 2003,
     anio_fin: int = 2025,
     pausa: int = 10,
-    max_reintentos: int = 6,
+    max_reintentos: int = 4,
 ) -> pd.DataFrame:
     """
     Descarga y resume los datos climáticos de los municipios agrícolas
@@ -420,7 +420,10 @@ def descargar_clima_estado(
                 )
 
                 if status == 429:
-                    espera = 30 * intento
+                    esperas_429 = [60, 120, 300, 600, 900, 1800]
+                    espera = esperas_429[
+                        min(intento - 1, len(esperas_429) - 1)
+                    ]
 
                     logger.warning(
                         f"429 Too Many Requests. "
@@ -451,8 +454,10 @@ def descargar_clima_estado(
                 "de los reintentos. El progreso anterior "
                 "permanece guardado."
             )
-            return clima_guardado
-
+            raise RuntimeError(
+                f"Descarga detenida por límite de solicitudes "
+                f"en {nombre_estado}. Reanudar más tarde."
+            )
         if not isinstance(datos_lote, list):
             datos_lote = [datos_lote]
 
@@ -543,6 +548,161 @@ def descargar_clima_estado(
     )
 
     return clima_guardado
+
+def descargar_clima_todos_estados(
+    municipios_clima: pd.DataFrame,
+    tamano_lote: int = 2,
+    anio_inicio: int = 2003,
+    anio_fin: int = 2025,
+    pausa: int = 10,
+) -> pd.DataFrame:
+    """
+    Descarga los datos climáticos de todos los estados de México.
+
+    Cada estado se procesa de manera independiente y conserva su
+    progreso en data/raw/clima, permitiendo reanudar la descarga
+    si el proceso se interrumpe.
+    """
+
+    resumen_estados = []
+
+    logger.info(
+        f"Descarga climática nacional | "
+        f"Periodo: {anio_inicio}-{anio_fin} | "
+        f"Estados: {len(ESTADOS)} | "
+        f"Municipios agrícolas: {len(municipios_clima):,}"
+    )
+
+    for id_estado, nombre_estado in ESTADOS.items():
+
+        municipios_estado = (
+            municipios_clima[
+                municipios_clima["Idestado"] == id_estado
+            ]
+            .copy()
+        )
+
+        total_municipios = len(municipios_estado)
+
+        logger.info(
+            f"Procesando estado {id_estado:02d}/32: "
+            f"{nombre_estado.upper()} | "
+            f"{total_municipios} municipios"
+        )
+
+        try:
+            clima_estado = descargar_clima_estado(
+                id_estado=id_estado,
+                municipios_clima=municipios_clima,
+                tamano_lote=tamano_lote,
+                anio_inicio=anio_inicio,
+                anio_fin=anio_fin,
+                pausa=pausa,
+            )
+
+            if (
+                clima_estado is not None
+                and not clima_estado.empty
+            ):
+                anios_esperados = (
+                    anio_fin - anio_inicio + 1
+                )
+
+                completos = (
+                    clima_estado
+                    .groupby(
+                        ["Idestado", "Idmunicipio"]
+                    )["Anio"]
+                    .nunique()
+                    .eq(anios_esperados)
+                    .sum()
+                )
+
+            else:
+                completos = 0
+
+            estado_completo = (
+                completos == total_municipios
+            )
+
+            resumen_estados.append(
+                {
+                    "Idestado": id_estado,
+                    "Estado": nombre_estado,
+                    "Municipios": total_municipios,
+                    "Completos": completos,
+                    "Estado_completo": estado_completo,
+                }
+            )
+
+            if estado_completo:
+                logger.success(
+                    f"{nombre_estado.upper()} FINALIZADO."
+                )
+            else:
+                logger.warning(
+                    f"{nombre_estado.upper()} PARCIAL: "
+                    f"{completos}/{total_municipios}"
+                )
+         
+        except RuntimeError as error:
+            logger.error(
+                f"Descarga detenida en {nombre_estado}: {error}"
+            )
+
+            logger.warning(
+                "Se detiene la descarga nacional. "
+                "El progreso guardado se conserva y "
+                "puede reanudarse posteriormente."
+            )
+
+            raise
+
+        except Exception as error:
+            logger.error(
+                f"Error procesando {nombre_estado}: {error}"
+            )
+
+            resumen_estados.append(
+                {
+                    "Idestado": id_estado,
+                    "Estado": nombre_estado,
+                    "Municipios": total_municipios,
+                    "Completos": None,
+                    "Estado_completo": False,
+                }
+            )
+
+            logger.warning(
+                "Continuando con el siguiente estado."
+            )
+
+        # Descanso adicional entre estados
+        time.sleep(15)
+
+    resumen_estados = pd.DataFrame(
+        resumen_estados
+    )
+
+    estados_completos = (
+        resumen_estados["Estado_completo"].sum()
+    )
+
+    municipios_completos = (
+        resumen_estados["Completos"]
+        .fillna(0)
+        .sum()
+    )
+
+    logger.info(
+        f"Resumen nacional | "
+        f"Estados completos: {estados_completos}/32 | "
+        f"Municipios completos: "
+        f"{municipios_completos:,.0f}/"
+        f"{len(municipios_clima):,}"
+    )
+
+    return resumen_estados
 
 @app.command()
 def main():
