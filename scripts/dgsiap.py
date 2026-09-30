@@ -5,18 +5,13 @@
 import requests
 from bs4 import BeautifulSoup
 import yarl
-from pathlib import Path
 import re
-from scripts.config import MAIN_URL
-
+from scripts.config import DGSIAP
 
 
 # Definimos las urls a utilizar
-## URL BASE: De esta parten las siguientes
-
-# MAIN_URL = yarl.URL("https://nube.agricultura.gob.mx")
 ## Pagina principal: De aqui obtendremos la información
-PAGE_URL = MAIN_URL / "datosAbiertos/"
+PAGE_URL = DGSIAP / "datosAbiertos/"
 
 ## Menu para elegir entre los datos agricolas y los datos pecuarios.
 print("Bienvenido al script de descarga de datos abiertos del DGSIAP.")
@@ -47,10 +42,14 @@ else:
 # Mandamos la información para su recopilación
 page = BeautifulSoup(response.content, "lxml")
 
+
 # Definimos nuestra zona de trabajo.
 content = page.find("main")
+
+
 # Dividiremos la pagina en sus secciones principales
 sections = content.find_all("section", recursive=False)
+
 
 def welcome():
     tree = sections[0]
@@ -149,5 +148,6 @@ def dict_master():
                   "Datasets": data_history[b]}
                    for b in data_dicts.keys()}
     return connector
+
 
 print(f"Usted escogio {value}")

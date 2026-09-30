@@ -1,16 +1,9 @@
-from scripts.config import MAIN_URL, REF_PATH
+from scripts.config import dgsiap, DATA_FOLDERS
 import os
 from datetime import date
 import requests
-from pathlib import Path
 import yarl
 
-
-## Debemos realizar esto para mejor compatibilidad con jupyter notebooks
-DATA_PATH = REF_PATH / ".." / "data" / "external" 
-
-## Fuente de datos. 
-DOWNLOAD_URL = MAIN_URL / "index.php"
 
 def get_filename(link):
     head = requests.head(link)
@@ -25,13 +18,13 @@ def get_filename(link):
     return name
 
     
-def parse_link(url, base=DOWNLOAD_URL):
+def parse_link(url, base=dgsiap):
     y_url= yarl.URL(url)
     link = base.with_query(y_url.query)
     return link
 
 
-def download(link, filename, path=DATA_PATH, **kwargs):
+def download(link, filename, path=DATA_FOLDERS['external'], **kwargs):
     hint = kwargs.get("hint", 0)
     filelink = link / filename
     filepath = path / filename
@@ -132,7 +125,6 @@ def full_cat(category, **kwargs):
     return response
 
 
-
 def downassist(**kwargs):
     """
         Descarga arbitraria de información del DGSIAP
@@ -176,6 +168,7 @@ def downbot(dictlink, **kwargs):
                     all_fns.append(fn)                    
         for k in range(len(all_links)):
             download(all_links[k], all_fns[k])
+
 
 def agro(**kwargs):
     down_data = {}

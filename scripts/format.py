@@ -3,10 +3,7 @@
     Formatting Codebooks
 """
 from scripts.config import REF_PATH
-import pandas as pd
-
-# Definimos donde guardaremos nuestras herramientas
-AUXILIAR_PATH = REF_PATH / ".." / "data" / "interim"
+import cchardet
 
 
 def get_encoding(filepath):
