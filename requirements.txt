@@ -1,8 +1,15 @@
-pandas>=1.5
-matplotlib>=3.6
-requests>=2.28
-scikit-learn>=1.1
-joblib>=1.2
-ipykernel>=6.0
-geopandas>=0.14
-pillow>=10.0
+ipython
+jupyterlab
+loguru
+matplotlib
+notebook
+numpy
+pandas
+pip
+pytest
+python-dotenv
+ruff
+scikit-learn
+tqdm
+typer
+-e .

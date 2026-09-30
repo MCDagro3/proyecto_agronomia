@@ -1,0 +1,32 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "proyecto_agronomia"
+version = "0.0.1"
+description = "Analisis de factores agricolas, geograficos y climaticos asociados con el exito de la produccion agricola en Mexico entre 2003 y 2025."
+authors = [
+  { name = "\"Julian Villase\u00f1or, Fausto Medina, David Pe\u00f1a\"" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License"
+]
+requires-python = "~=3.12.0"
+
+
+[tool.ruff]
+line-length = 99
+src = ["proyecto_agronomia"]
+include = ["pyproject.toml", "proyecto_agronomia/**/*.py"]
+
+[tool.ruff.lint]
+extend-select = ["I"]  # Add import sorting
+
+[tool.ruff.lint.isort]
+known-first-party = ["proyecto_agronomia"]
+force-sort-within-sections = true
+
