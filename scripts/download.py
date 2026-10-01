@@ -127,7 +127,6 @@ def agro_files(req):
     return downlog
 
 
-
 def agro_project():
     from scripts.dgsiap import dict_master
     raw_data = dict_master()
@@ -135,3 +134,14 @@ def agro_project():
     response = get_request(request=project_request, ref=raw_data)
     agro = agro_files(response)
     return agro
+
+
+def load_filetree(ftree):
+    """
+        Download the files of a file tree.
+    """
+    for v in ftree.values():
+        v['Codebook'].downcheck()
+        data_file = v['Data']
+        for dv in data_file.values():
+            dv.downcheck()

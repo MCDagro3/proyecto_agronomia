@@ -28,6 +28,9 @@ DATA_FOLDERS = {"external": DATA_DIR / "external",
                 "interm": DATA_DIR / "interim",
                 "process": DATA_DIR / "processed",
 }
+
+LOG_DIR = get_project_root() / "docs"
+
 SOURCE_FOLDERS = {
     "dgsiap": "dgsiap",
     "datamexico": "datamexico"

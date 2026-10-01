@@ -21,7 +21,6 @@ class File:
             return local_ubication
         else:
             return self.ubication
-        
     def downcheck(self, folder="raw"):
         if not os.path.exists(self.filepath):
             self.state = 0 
@@ -34,5 +33,4 @@ class File:
             download(self.link, self.file, filepath)
             self.state = 1
             self.filepath = filepath
-            self.ubication = filepath / self.file            
-
+            self.ubication = filepath / self.file
