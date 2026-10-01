@@ -2,7 +2,6 @@
     Parse encodings
     Formatting Codebooks
 """
-from scripts.config import REF_PATH
 import cchardet
 
 

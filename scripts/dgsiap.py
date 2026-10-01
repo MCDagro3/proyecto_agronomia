@@ -6,52 +6,55 @@ import requests
 from bs4 import BeautifulSoup
 import yarl
 import re
-from scripts.config import DGSIAP
+from scripts.config import dgsiap_page
 
 
-# Definimos las urls a utilizar
-## Pagina principal: De aqui obtendremos la información
-PAGE_URL = DGSIAP / "datosAbiertos/"
 
-## Menu para elegir entre los datos agricolas y los datos pecuarios.
-print("Bienvenido al script de descarga de datos abiertos del DGSIAP.")
+def introduction(**kwargs):
+    menu = kwargs.get("menu", 0)
 
-info = {
-    "Agricola": "Agricola.php",
-    "Pecuaria": "Pecuario.php",
-}
+    if menu:
+        ## Menu para elegir entre los datos agricolas y los datos pecuarios.
+        print("Bienvenido al script de descarga de datos abiertos del DGSIAP.")
 
-value = input(f"Ingrese la categoria de los datos a consultar.\n{" \n".join(info.keys())}: ")
+        info = {
+            "Agricola": "Agricola.php",
+            "Pecuaria": "Pecuario.php",
+        }
 
-try:
-    BOT_URL = PAGE_URL / info[value]
-except KeyError:
-    print("Categoria no valida. Por favor, ingrese una categoria valida.")
-    exit(1)
+        value = input(f"Ingrese la categoria de los datos a consultar.\n{" \n".join(info.keys())}: ")
+
+        try:
+            BOT_URL = dgsiap_page / info[value]
+        except KeyError:
+            print("Categoria no valida. Por favor, ingrese una categoria valida.")
+            exit(1)
+    else:
+        value = "Agricola.php"
+        BOT_URL = dgsiap_page / value
+
+    # Intento de conexión
+    response = requests.get(BOT_URL)
+    if response.status_code != 200:
+        print(f"Error al acceder a la pagina: {response.status_code}")
+        exit(1)
+    else:
+        print("Conexion Establecida")
+
+    # Mandamos la información para su recopilación
+    page = BeautifulSoup(response.content, "lxml")
+
+    # Definimos nuestra zona de trabajo.
+    content = page.find("main")
+
+    # Dividiremos la pagina en sus secciones principales
+    sections = content.find_all("section", recursive=False)
+
+    print(f"Usted escogio {value.split(".")[0]}")
+    return sections
 
 
-# Intento de conexión
-response = requests.get(BOT_URL)
-if response.status_code != 200:
-    print(f"Error al acceder a la pagina: {response.status_code}")
-    exit(1)
-else:
-    print("Conexion Establecida")
-
-
-# Mandamos la información para su recopilación
-page = BeautifulSoup(response.content, "lxml")
-
-
-# Definimos nuestra zona de trabajo.
-content = page.find("main")
-
-
-# Dividiremos la pagina en sus secciones principales
-sections = content.find_all("section", recursive=False)
-
-
-def welcome():
+def welcome(sections):
     tree = sections[0]
     intro_data = []
     for t in tree.find_all("li"):
@@ -61,7 +64,7 @@ def welcome():
     print(f"De parte de la {intro_data[0]} te damos la bienvenida al conjunto de {intro_data[1]} de la {intro_data[2]}")
 
 
-def basic_intro():
+def basic_intro(sections):
     intro = sections[1]
     raw_intro=list()
     for t in intro.find_all("div", recursive=False):
@@ -75,7 +78,7 @@ def basic_intro():
     print(raw_intro[-1])
 
 
-def blocks_intro():
+def blocks_intro(sections):
     history = sections[3]
     data_title = history.find("div", {"class":"mb-0 h5 font-weight-bold section-title"}).text
     data_content = history.find("div", {"id":"dataAccordion"})
@@ -87,7 +90,8 @@ def blocks_intro():
     return data_blocks
 
 
-def get_catalog(sec=sections[2]):
+def get_catalog(sections):
+    sec = sections[2]
     block = sec.find("div", {"class":"dict-section"})
     mini_blocks = block.find_all("div", {"class":re.compile(r"col-12 col-md-6*?")})
     codebook, metadata = mini_blocks[0], mini_blocks[1]
@@ -105,7 +109,8 @@ def get_catalog(sec=sections[2]):
     return metadata_info, codebook_info
 
 
-def get_data(sec=sections[2]):
+def get_data(sections):
+    sec = sections[2]
     block = sec.find("div", {"class":"bento-card h-100"})
     u = block.find_all("div", recursive=False)
     data_info = [s.text for s in u[0].find_all("span", recursive=False)]
@@ -115,12 +120,11 @@ def get_data(sec=sections[2]):
 
 
 def dict_master():
-    content = page.find("main")
-    sections = content.find_all("section", recursive=False)
-    data_blocks=blocks_intro()
+    sections = introduction()
+    data_blocks=blocks_intro(sections)
     last = sections[2]
-    search_title_section=last.find("div")
-    last_title = search_title_section.text.strip("\n").strip("\t")[:-1]
+    # search_title_section=last.find("div")
+    # last_title = search_title_section.text.strip("\n").strip("\t")[:-1]
 
     # Diccionario de Datos
     data_dicts = {db:{} for db in data_blocks.keys()}
@@ -128,10 +132,10 @@ def dict_master():
     history_blocknames = list(data_dicts.keys())
     for db in history_blocknames:
         if db == history_blocknames[0]:
-            data_dicts[db]["metadata"], data_dicts[db]["info"] = get_catalog(sec=last)
+            data_dicts[db]["metadata"], data_dicts[db]["info"] = get_catalog(sections)
             continue
         block = data_blocks[db]
-        data_dicts[db]["metadata"], data_dicts[db]["info"] =  get_catalog(sec=block)
+        data_dicts[db]["metadata"], data_dicts[db]["info"] =  get_catalog(sections)
 
     data_history = {db:[] for db in data_blocks.keys()}
 
@@ -150,4 +154,4 @@ def dict_master():
     return connector
 
 
-print(f"Usted escogio {value}")
+
