@@ -41,7 +41,7 @@ def format_codebook(code):
     content.set_index(content.columns[1], inplace=True)
     content = content.drop(columns="Consecutivo\nen la base")
 
-    var = code.iloc[34:38, :1]
+    var = code.iloc[34:39, :1]
     var.columns = ['Variable']
     values = [v.split(":") for v in var['Variable']]
     code_index = [l[0] for l in values]
