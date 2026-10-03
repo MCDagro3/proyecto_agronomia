@@ -435,46 +435,7 @@ La selección definitiva de variables y modelos se realizará después de
 completar la integración, el análisis exploratorio y la evaluación de
 posibles problemas de fuga de información.
 
----
 
-# Estado del proyecto — v1.0
-
-La versión **1.0** representa la migración del proyecto a
-**Cookiecutter Data Science v2**.
-
-En esta versión se cuenta con:
-
-- estructura CCDS v2;
-- entorno reproducible mediante `requirements.txt`;
-- paquete Python `proyecto_agronomia`;
-- configuración centralizada en `config.py`;
-- adquisición de datos implementada en `dataset.py`;
-- transformación y generación de variables en `features.py`;
-- datos agrícolas 2003–2025;
-- normalización del esquema agrícola histórico;
-- dataset agrícola histórico y variables derivadas;
-- geometrías municipales y estatales de INEGI;
-- coordenadas representativas municipales;
-- integración completa entre municipios agrícolas y coordenadas;
-- pipeline reanudable para adquisición climática mediante Open-Meteo/ERA5;
-- notebooks reproducibles para documentar la adquisición de datos.
-
-La adquisición climática se encuentra en progreso debido al volumen de
-consultas y a los límites de solicitudes de la API. El almacenamiento
-incremental permite continuar el proceso sin repetir las observaciones
-ya obtenidas.
-
-## Próxima etapa
-
-A partir de esta versión comienza el desarrollo analítico del proyecto:
-
-1. completar la adquisición climática 2003–2025;
-2. construir el dataset agrícola-climático integrado;
-3. realizar análisis exploratorio y visualización;
-4. definir el conjunto de variables para modelado;
-5. entrenar y evaluar modelos estadísticos y de aprendizaje automático.
-
----
 
 # Project Organization
 

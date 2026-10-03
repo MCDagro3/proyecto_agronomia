@@ -19,6 +19,8 @@ from proyecto_agronomia.config import (
     INEGI_INTERIM_DIR,
     INEGI_MUNICIPIOS_URL_TEMPLATE,
     OPEN_METEO_ARCHIVE_URL,
+    AGRICULTURA_DICCIONARIO_PATH,
+    AGRICULTURA_DICCIONARIO_URL,
 )
 
 app = typer.Typer()
@@ -80,6 +82,68 @@ def descargar_datos_agricolas(
         archivos.append(ruta)
 
     return archivos
+
+def descargar_diccionario_agricola(
+    ruta: Path = AGRICULTURA_DICCIONARIO_PATH,
+) -> Path:
+    """
+    Descarga el diccionario oficial de los datos de Cierre de la
+    Producción Agrícola de la DGSIAP.
+
+    El archivo se almacena en references/ como documentación de la
+    fuente de datos. Si el archivo ya existe, no se vuelve a descargar.
+
+    Parameters
+    ----------
+    ruta : Path
+        Ruta donde se almacenará el diccionario XLSX.
+
+    Returns
+    -------
+    Path
+        Ruta del diccionario disponible localmente.
+    """
+
+    ruta.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    if ruta.exists():
+        logger.info(
+            "El diccionario agrícola ya existe."
+        )
+        return ruta
+
+    logger.info(
+        "Descargando diccionario agrícola DGSIAP..."
+    )
+
+    try:
+        respuesta = requests.get(
+            AGRICULTURA_DICCIONARIO_URL,
+            timeout=120,
+        )
+
+        respuesta.raise_for_status()
+
+        ruta.write_bytes(
+            respuesta.content
+        )
+
+    except requests.RequestException as error:
+        logger.error(
+            "Error descargando el diccionario "
+            f"agrícola: {error}"
+        )
+        raise
+
+    logger.success(
+        "Diccionario agrícola descargado: "
+        f"{ruta.name}"
+    )
+
+    return ruta
 
 def obtener_municipios_inegi(
     directorio: Path = INEGI_INTERIM_DIR,

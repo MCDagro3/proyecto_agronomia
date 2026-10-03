@@ -31,6 +31,7 @@ FIGURES_DIR = REPORTS_DIR / "figures"
 
 AGRICULTURA_RAW_DIR = RAW_DATA_DIR / "agricultura"
 CLIMA_RAW_DIR = RAW_DATA_DIR / "clima"
+REFERENCES_DIR = PROJ_ROOT / "references"
 
 INEGI_INTERIM_DIR = INTERIM_DATA_DIR / "inegi"
 
@@ -50,6 +51,16 @@ ANIOS = list(range(ANIO_INICIAL, ANIO_FINAL + 1))
 AGRICULTURA_URL_TEMPLATE = (
     "https://nube.agricultura.gob.mx/index.php"
     "?view=10AE434F-A2158368-A120BC5A-EDF4AFAA&ANIO={anio}"
+)
+
+AGRICULTURA_DICCIONARIO_URL = (
+    "https://nube.agricultura.gob.mx/"
+    "index.php?view=5D24F995-E734D711-1EA6F8D2-9D1387D7"
+)
+
+AGRICULTURA_DICCIONARIO_PATH = (
+    REFERENCES_DIR
+    / "diccionario_datos_agricultura_dgsiap.xlsx"
 )
 
 OPEN_METEO_ARCHIVE_URL = (
