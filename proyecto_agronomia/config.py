@@ -34,7 +34,8 @@ CLIMA_RAW_DIR = RAW_DATA_DIR / "clima"
 REFERENCES_DIR = PROJ_ROOT / "references"
 
 INEGI_INTERIM_DIR = INTERIM_DATA_DIR / "inegi"
-
+EDAFOLOGIA_RAW_DIR = RAW_DATA_DIR / "edafologia"
+EDAFOLOGIA_REFERENCES_DIR = REFERENCES_DIR / "edafologia"
 # ---------------------------------------------------------------------
 # Study period
 # ---------------------------------------------------------------------
@@ -75,6 +76,24 @@ INEGI_MUNICIPIOS_URL_TEMPLATE = (
 INEGI_ESTADOS_URL_TEMPLATE = (
     "https://gaia.inegi.org.mx/"
     "wscatgeo/v2/geo/mgee/{clave_estado}"
+)
+
+EDAFOLOGIA_URL = (
+    "https://www.inegi.org.mx/contenidos/productos/"
+    "prod_serv/contenidos/espanol/bvinegi/productos/"
+    "geografia/tematicas/Edafologia_hist/1_250_000/"
+    "serie%20III/794551118313_s.zip"
+)
+
+EDAFOLOGIA_DICCIONARIO_URL = (
+    "https://www.inegi.org.mx/contenidos/productos/"
+    "prod_serv/contenidos/espanol/bvinegi/productos/"
+    "nueva_estruc/702825092023.pdf"
+)
+
+EDAFOLOGIA_DICCIONARIO_PATH = (
+    EDAFOLOGIA_REFERENCES_DIR
+    / "diccionario_datos_edafologicos_250k_v4.pdf"
 )
 
 ESTADOS = {
