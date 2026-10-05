@@ -6,11 +6,12 @@
     4. encode_block(). Detectar la codificación de los archivos de un bloque de datos.
     5. formatted_data(). Formatear los archivos de un bloque de datos y generar los diccionarios de datos y variables.
 """
-from scripts.config import DATA_FOLDERS
+from scripts.config import DATA_FOLDERS, get_project_root
 from scripts.File import File
 import cchardet
+import pickle
 import pandas as pd
-
+import os
 
 
 def get_encoding(filepath):
@@ -59,6 +60,10 @@ def encode_block(file_block: dict):
         return:
             dict. The data block with the encoding of the files.
     """
+    if os.path.exists(get_project_root() / "docs" / "encode_project.pkl"):
+        with open(get_project_root() / "docs" / "encode_project.pkl", 'rb') as f:
+            encode_project = pickle.load(f)
+        return encode_project
     encode = {"Codebook":None,
              "Data": {}}
     encode['Codebook'] = file_block['Codebook']
@@ -80,6 +85,7 @@ def format_block(format_block, block):
     
     formatted = {"Codebook": {}, "Data": {}}
     codebook = format_block['Codebook']
+    print("ADATA", codebook.filepath / codebook.file)
     file_code = pd.read_excel(codebook.filepath / codebook.file)
     catalog, variables = format_codebook(file_code)
     format_path = DATA_FOLDERS['interm'] / codebook.source
@@ -91,7 +97,6 @@ def format_block(format_block, block):
     catalog.to_excel(catfile.get_local_ubication())
     variables.to_excel(varfile.get_local_ubication())
     data = format_block['Data']
-    print(data)
     for y, enficode in data.items():
         file, encode = enficode.values()
         dfile = File(format_path, file.file, file.source)
