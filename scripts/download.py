@@ -49,7 +49,6 @@ def download(link, filename, path, **kwargs):
         print(f"El archivo ya fue descargado. Se encuentra en {str(filepath).split("..")[-1]}")
 
 
-
 def input_parser(value):
     """
         Elementos string, int o list los coniverte a lista
