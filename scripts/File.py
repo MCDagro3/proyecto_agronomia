@@ -1,5 +1,5 @@
 
-from scripts.config import DATA_FOLDERS
+from scripts.config import file_to
 import os
 
 class File:
@@ -29,7 +29,7 @@ class File:
             print(f"Se encuentra en {self.filepath}")
         else:
             from scripts.download import download
-            filepath = DATA_FOLDERS[folder] / self.source
+            filepath = file_to(folder, self.source)
             download(self.link, self.file, filepath)
             self.state = 1
             self.filepath = filepath

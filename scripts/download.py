@@ -1,4 +1,4 @@
-from scripts.config import dgsiap_api
+from scripts.config import dgsiap_api, file_to
 from scripts.File import File
 import os
 from datetime import date

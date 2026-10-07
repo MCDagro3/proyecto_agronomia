@@ -6,7 +6,7 @@
     4. encode_block(). Detectar la codificación de los archivos de un bloque de datos.
     5. formatted_data(). Formatear los archivos de un bloque de datos y generar los diccionarios de datos y variables.
 """
-from scripts.config import DATA_FOLDERS, get_project_root
+from scripts.config import file_to, get_project_root
 from scripts.File import File
 import cchardet
 import pickle
@@ -88,7 +88,7 @@ def format_block(format_block, block):
     print("ADATA", codebook.filepath / codebook.file)
     file_code = pd.read_excel(codebook.filepath / codebook.file)
     catalog, variables = format_codebook(file_code)
-    format_path = DATA_FOLDERS['interm'] / codebook.source
+    format_path = file_to("interim", codebook.source)
     catfile = File(format_path, f"Diccionario_Datos_{block}.xlsx", codebook.source)
     varfile = File(format_path, f"Tipo_Variables_{block}.xlsx", codebook.source)
     formatted['Codebook'] = {
