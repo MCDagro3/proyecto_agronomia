@@ -5,27 +5,9 @@ from yarl import URL
 from pathlib import Path
 
 
-
-def get_project_root() -> Path:
-    """
-    Detecta automáticamente la raíz del proyecto.
-    Funciona tanto en scripts como en Jupyter notebooks.
-    """
-    try:
-        current_path = Path(__file__).resolve()
-    except NameError:
-        current_path = Path.cwd()
-    
-    for parent in [current_path] + list(current_path.parents):
-        if (parent / "data").is_dir():
-            return parent
-    return Path.cwd()
-
-
-# Primero definimos la ruta referencia del projecto
-ROOT = get_project_root()
-## Ruta referencia de los daros
+ROOT = list(Path(__file__).resolve().parents)[1]
 DATA_DIR = ROOT / "data"
+
 
 def save_path(folderfinal, **kwargs)-> Path:
     block_folder = kwargs.get("folder", "data")
