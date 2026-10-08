@@ -1,9 +1,13 @@
-import yarl
+"""
+    Configuraciones Generales del Proyecto de Agronomia.
+"""
+from yarl import URL
 from pathlib import Path
-import os
 
-# Ubicación de los archivos descargados
-## Definimos la ruta principal. En este caso la ruta de la carpeta donde se encuentra el proyexto.
+
+# Primero definimos la ruta referencia del projecto
+ROOT = get_project_root()
+
 def get_project_root() -> Path:
     """
     Detecta automáticamente la raíz del proyecto.
@@ -17,45 +21,43 @@ def get_project_root() -> Path:
     for parent in [current_path] + list(current_path.parents):
         if (parent / "data").is_dir():
             return parent
-    
     return Path.cwd()
 
-DATA_DIR = get_project_root() / "data"
 
-# Definimos las etapas de datos que vamos a usar.
-data_steps = [folder for folder in os.listdir(DATA_DIR) if not folder.startswith(".")]
+def save_path(folderfinal, **kwargs)-> Path:
+    block_folder = kwargs.get("folder", "data")
+    source = kwargs.get("source", "DGSIAP")
+    assert source in data_sources, f"Revisa tus fuentes en {ROOT}"
+    file_to = ROOT / block_folder / folderfinal / source
+    return file_to
+    
 
-# Definimos las fuentes de información a utilziar 
-data_sources = ["inegi", "datamexico", "dgsiap", "openmeteo"]
+# Fuentes de datos utilizadas
+data_sources = ['DGSIAP','INEGI','OPENMETEO','DATAMEXICO']
 
-def file_to(data_level, source, data_folder = DATA_DIR, valid_levels = data_steps, valid_sources = data_sources):
-    assert data_level in valid_levels
-    assert source in valid_sources
-    filepath = data_folder / data_level / source
-    return filepath
+# Las etapas de nuestros datos
+data_folders = ["pure", "raw", "interm", "process"]
 
+# Banco de URLS organizadas por fuente
 
-LOG_DIR = get_project_root() / "docs"
+source_links = {"DGSIAP": {
+                    "request": URL("https://nube.agricultura.gob.mx/datosAbiertos/"),
+                    "download":URL("https://nube.agricultura.gob.mx/datosAbiertos/index.php")},
+                "DATAMEXICO": {
+                    "request": None,
+                    "download":URL("https://www.economia.gob.mx/apidatamexico/tesseract/data.jsonrecords")},
+                "OPENMETEO":{
+                    "request": None,
+                    "download": None},
+                "INEGI":{"MAPA GENERAL":{
+                    "request": None,
+                    "download": URL("https://www.inegi.org.mx/contenidos/productos/prod_serv/contenidos/espanol/bvinegi/productos/geografia/marcogeo/794551196649/mg_integrado_encuesta_intercensal_2025.zip")}
+                    }
+}
 
-
-
-# Mapa de México precargado para evitar la descarga durante el analisis.
-PRELOAD_MEXICO = DATA_DIR / "docs" / "mexico_agro.zip"
-
-
-
-# Fuentes de Datos
-## DGSIAP
-dgsiap_source = yarl.URL("https://nube.agricultura.gob.mx")
-dgsiap_page = dgsiap_source / "datosAbiertos/"
-dgsiap_api = dgsiap_source / "index.php"
-
-
-## DATA MEXICO
-datamexico = yarl.URL("https://www.economia.gob.mx/apidatamexico/tesseract/data.jsonrecords")
+# Datos Publicos precargados para acelear el analisis de datos
+PRELOADS = {"MAPA GENERAL": ROOT / preload / "mexico_agro.zip"}
 
 
-# Visualización
-## Mapa de la Republica Méxicana con Estados y Municipios. Para descarga
-inegi_mexico = "https://www.inegi.org.mx/contenidos/productos/prod_serv/contenidos/espanol/bvinegi/productos/geografia/marcogeo/794551196649/mg_integrado_encuesta_intercensal_2025.zip"
-mexico_map = yarl.URL(inegi_mexico)
+
+
