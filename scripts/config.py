@@ -33,7 +33,9 @@ data_folders = ["pure", "raw", "interm", "process"]
 
 source_links = {"DGSIAP": {
                     "request": URL("https://nube.agricultura.gob.mx/datosAbiertos/"),
-                    "download":URL("https://nube.agricultura.gob.mx/index.php")},
+                    "download":URL("https://nube.agricultura.gob.mx/index.php"),
+                    "avance": URL("https://nube.agricultura.gob.mx/avance_agricola/"),
+                    "agroprograma": URL("https://nube.agricultura.gob.mx/agroprograma/")},
                 "DATAMEXICO": {
                     "request": None,
                     "download":URL("https://www.economia.gob.mx/apidatamexico/tesseract/data.jsonrecords")},
