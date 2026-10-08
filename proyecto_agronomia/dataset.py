@@ -2,6 +2,7 @@ import typer
 from loguru import logger
 
 from proyecto_agronomia.config import ANIOS
+
 from proyecto_agronomia.datasets.agricultura import (
     descargar_datos_agricolas,
     descargar_diccionario_agricola,

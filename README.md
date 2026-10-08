@@ -24,10 +24,10 @@ Como variable inicial para representar el resultado de la producción
 agrícola se considera la proporción de superficie sembrada que logra
 ser cosechada:
 
-\[
+$$
 TasaCosecha =
 \frac{Cosechada}{Sembrada}
-\]
+$$
 
 Esta definición podrá complementarse con otras variables durante las
 etapas posteriores de análisis y modelado.
