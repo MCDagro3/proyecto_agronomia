@@ -3,7 +3,7 @@ from datetime import date
 import requests as r
 import os
 import cchardet
-
+import pandas as pd
 
 class WebFile:
     def __init__(self, link, source):
@@ -43,17 +43,13 @@ class WebFile:
                     f.write(data.content)
             self.downdate = date.today()
             print(f"Descarga completa. EL archivo se encuentra en /data/pure/{self.source}")
-            self.ubication = filepath
         else:
             print(f"El archivo ya fue descargado. Se encuentra en /data/pure/{self.source}")
+        self.ubication = filepath
+    def get_extension(self):
+        assert self.filename is not None, "No hay nombre de archivo"
+        self.ext = self.filename.split(".")[-1]
 
-
-class File:
-    def __init__(self, filename: str, path: Path):
-        file_id = filename.split(".")
-        self.name = file_id[0]
-        self.ext = file_id[1]
-        self.ubication = path / filename
     def get_encoding(self, force=False):
         """
             Intenta detectar el encoding de archivos.
@@ -72,14 +68,40 @@ class File:
                 * La detección puede equivocarse, revisar encodings 
                 tipicos del idioma del archivo.
         """
-        if force:
+        if force != False:
             self.encode = force
-
-        with open(self.ubication, 'rb') as file:
-            data=file.read()
-            res = cchardet.detect(data)
-        return res
-
+        else:
+            try:
+                self.encode = self.dect_encode['encoding']
+                print(f"El archivo fue procesado. Encode de la útlima vez {self.encode}")
+            except:
+                with open(self.ubication, 'rb') as file:
+                    data=file.read()
+                    res = cchardet.detect(data)
+                self.dect_encode = res
+                self.encode = res['encoding']
+    def load(self):
+        try:
+            print(f"El archivo ya esta cargado {self.loader}")
+        except:
+            self.get_extension()
+            assert self.ext in ("csv","xlsx"), "La función solo admite .csv y .xlsx"
+            loader = pd.read_csv if self.ext == "csv" else pd.read_excel
+            try:
+                loader(self.ubication)
+            except UnicodeDecodeError as e:
+                self.get_encoding()
+                if self.ext == "csv":
+                    loader = lambda x: pd.read_csv(x, encoding=file.encode, low_memory=False)
+                else:
+                    print("Revisa el archivo", file.filename)
+            self.loader = loader
+    def open(self):
+        try:
+            return self.loader(self.ubication)
+        except:
+            self.load()
+            return self.loader(self.ubication)
 
 class WebTree:
     def __init__(self, source: str, root, branchs: list):
@@ -103,6 +125,11 @@ class WebTree:
             self.branchfiles.append(bfile)
             print(f"Archivo Descargado {n}/{1 + len(self.branch)}")
 
+    def load(self):
+        self.rootfile.load()
+        for file in self.branchfiles:
+            file.load()
+        print("Los archivos estan cargados")
 
 class INEGITree(WebTree):
     def metadata(self, file):
