@@ -82,22 +82,27 @@ class File:
 
 
 class WebTree:
-    def __init__(self, source, root, branchs = []):
+    def __init__(self, source: str, root, branchs: list):
         self.root = root
         self.branch = branchs
         self.source = source
     def download(self):
+        n = 1
         path = DATA_DIR / "pure" / self.source
-        root_file = WebFile(self.root)
+        root_file = WebFile(self.root, self.source)
         root_file.set_filename()
+        root_file.download()
+        self.rootfile = root_file
+        print(f"Archivo Descargado {n}/{1 + len(self.branch)}")
+        self.branchfiles = []
         for file in self.branch:
-            bfile = WebFile(file)
+            bfile = WebFile(file, self.source)
             bfile.set_filename()
+            bfile.download()
+            n += 1
+            self.branchfiles.append(bfile)
+            print(f"Archivo Descargado {n}/{1 + len(self.branch)}")
 
-
-
-
-        
 
 class INEGITree(WebTree):
     def metadata(self, file):
