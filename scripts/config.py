@@ -59,8 +59,9 @@ info = {
 dgsiap_info = info['Agricola']
 
 
-# Datos Publicos precargados para acelear el analisis de datos
-PRELOADS = {"MAPA GENERAL": ROOT / "preload" / "mexico_agro.zip"}
+# Datos Publicos precargados para acelerar el analisis de datos
+PRELOADS = {"MAPA GENERAL": ROOT / "preload" / "mexico_agro.zip",
+            "AGROPROD_0": ROOT / "preload" / "DGSIAP_PREP.pkl"}
 
 
 

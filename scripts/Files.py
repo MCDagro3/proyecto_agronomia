@@ -5,8 +5,38 @@ import os
 import cchardet
 import pandas as pd
 
+
+class File:
+    def __init__(self, path, source):
+        self.ubication = path
+        self.source = source
+        self.filename = str(path).split("/")[-1]
+
+ 
+    def open(self, **kwargs):
+        parms = kwargs.get("pars", [False,0])        
+        ext = self.filename.split(".")[-1]
+        assert ext in ("csv", "xlsx")
+        if ext == "csv":
+            file = pd.read_csv(self.ubication, **parms[1]) if parms[0] else pd.read_csv(self.ubication)
+        elif ext=="xlsx":
+            file = pd.read_excel(self.ubication, **parms[1]) if parms[0] else pd.read_excel(self.ubication)
+        return file
+
+
+
+class FileTree:
+    def __init__(self, root: File, branch: list, source: str):
+        self.root = root
+        self.branch = branch
+        self.source = source
+
+
+
+
+
 class WebFile:
-    def __init__(self, link, source):
+    def __init__(self, link, source: str):
         self.link = link
         self.source = source
 
@@ -92,16 +122,32 @@ class WebFile:
             except UnicodeDecodeError as e:
                 self.get_encoding()
                 if self.ext == "csv":
-                    loader = lambda x: pd.read_csv(x, encoding=file.encode, low_memory=False)
+                    loader = lambda x: pd.read_csv(x, encoding=self.encode, low_memory=False)
                 else:
-                    print("Revisa el archivo", file.filename)
+                    print("Revisa el archivo", self.filename)
             self.loader = loader
+        
     def open(self):
         try:
             return self.loader(self.ubication)
         except:
             self.load()
             return self.loader(self.ubication)
+    
+        
+    def prepare(self, **kwargs):
+        name = kwargs.get("name", self.filename.split(".")[0])
+        ideal_encode = "utf-8"
+        assert self.ext in ("csv", "xlsx"), "Solo funciona para .csv y .xlsx"
+        assert self.loader, "Carga el archivo"
+        file = self.open()
+        path = DATA_DIR / "raw" / self.source
+
+        filepath = path / f"{name}.{self.ext}"
+        file.to_csv(filepath, encoding=ideal_encode) if self.ext == "csv" else file.to_excel(filepath)
+        preparefile = File(filepath, self.source)
+        return preparefile
+
 
 class WebTree:
     def __init__(self, source: str, root, branchs: list):

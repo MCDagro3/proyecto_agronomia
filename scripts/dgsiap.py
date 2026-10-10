@@ -31,18 +31,22 @@ def blocks_intro(sections):
     data_title = history.find("div", {"class":"mb-0 h5 font-weight-bold section-title"}).text
     data_content = history.find("div", {"id":"dataAccordion"})
     blocks = data_content.find_all("div", recursive=False)
-    data_blocks = {b.find("div", {"class":"d-flex align-items-center"}).text.strip(): b for n, b in enumerate(blocks)}
+    data_blocks = {b.find("div", {"class":"d-flex align-items-center"}).text.strip(): b for b in blocks}
     # print(f"Los datos historicos se presentan en el espacio denominado: {data_title}")
     data_blocks_f = [f"{k + 1}. {b}" for k, b in enumerate(data_blocks.keys())]
     # print(f"Los datos se encuentran divididos en 3 bloques:\n\n{"\n".join(data_blocks_f)}")
     return data_blocks
 
 
-
-def get_catalog(sections):
-    sec = sections[2]
-    block = sec.find("div", {"class":"dict-section"})
-    mini_blocks = block.find_all("div", {"class":re.compile(r"col-12 col-md-6*?")})
+def format_codebook(category):
+    data_blocks = blocks_intro(dg_secs)
+    assert category in list(data_blocks.keys()), "Revisa la categoria"
+    if category == "Municipal":
+        raw = dg_secs[2]
+        sec = raw.find("div", {"class":"dict-section"})
+    else:
+        sec = data_blocks[category]
+    mini_blocks = sec.find_all("div", {"class":re.compile(r"col-12 col-md-6*?")})
     codebook, metadata = mini_blocks[0], mini_blocks[1]
     codebook_info = {"title": codebook.find("h2").text, 
                      "description": codebook.find("p").text,
@@ -64,13 +68,8 @@ def dict_master(sections=dg_secs):
     # Diccionario de Datos
     data_dicts = {db:{} for db in data_blocks.keys()}
 
-    history_blocknames = list(data_dicts.keys())
-    for db in history_blocknames:
-        if db == history_blocknames[0]:
-            data_dicts[db]["metadata"], data_dicts[db]["info"] = get_catalog(sections)
-            continue
-        block = data_blocks[db]
-        data_dicts[db]["metadata"], data_dicts[db]["info"] =  get_catalog(sections)
+    for db in data_dicts.keys():
+        data_dicts[db]["metadata"], data_dicts[db]["info"] = format_codebook(db)
 
     data_history = {db:[] for db in data_blocks.keys()}
 
@@ -87,7 +86,3 @@ def dict_master(sections=dg_secs):
                   "Datasets": data_history[b]}
                    for b in data_dicts.keys()}
     return connector
-
-"""
-    Fase Dos: Los arboles de archivo
-"""
