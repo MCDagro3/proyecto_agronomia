@@ -30,6 +30,8 @@ class FileTree:
         self.root = root
         self.branch = branch
         self.source = source
+    def add_subroot(self, subroot: File):
+        self.subroot = subroot
 
 
 
