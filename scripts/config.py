@@ -62,8 +62,9 @@ PRELOAD_FOLDER = ROOT / "preload"
 # Datos Publicos precargados para acelerar el analisis de datos
 PRELOADS = {"MAPA GENERAL": PRELOAD_FOLDER / "mexico_agro.zip",
             "AGROPROD_0": PRELOAD_FOLDER / "DGSIAP_PREP.pkl",
-            "AGROPROD_1": PRELOAD_FOLDER / "DGSIAP_NORM.pkl"}
-
+            "AGROPROD_1": PRELOAD_FOLDER / "DGSIAP_NORM.pkl",
+            "AGROPROD_2": PRELOAD_FOLDER / "DGSIAP_PROCESS.pkl",
+            "AGROPROD_3": PRELOAD_FOLDER / "DGSIAP_EDA.pkl"}
 
 
 
