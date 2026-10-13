@@ -40,6 +40,8 @@ dependencies = [
     "retry-requests>=2.0.0",
     "ruff",
     "selenium>=4.50.0",
+    "torch>=2.14.1",
+    "torchvision>=0.29.1",
     "websockets<=8.1",
     "yarl>=1.25.1",
 ]
@@ -58,3 +60,8 @@ extend-select = ["I"]  # Add import sorting
 known-first-party = ["scripts"]
 force-sort-within-sections = true
 
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
