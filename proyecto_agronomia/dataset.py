@@ -1,7 +1,9 @@
 import typer
 from loguru import logger
+import pandas as pd
+from pathlib import Path
 
-from proyecto_agronomia.config import ANIOS
+from proyecto_agronomia.config import (ANIOS, CONAGUA_PROCESSED_DIR) 
 
 from proyecto_agronomia.datasets.agricultura import (
     descargar_datos_agricolas,
@@ -23,6 +25,10 @@ from proyecto_agronomia.datasets.inegi import (
     obtener_municipios_inegi,
 )
 
+from proyecto_agronomia.datasets.clima_con import (
+    descargar_catalogo_conagua,
+    descargar_estaciones_conagua,
+)
 
 app = typer.Typer(
     help="Adquisición de datos del proyecto de agronomía."
@@ -71,6 +77,67 @@ def edafologia():
         "Descarga edafológica terminada."
     )
 
+@app.command("conagua-catalogo")
+def conagua_catalogo():
+    """
+    Descarga el catálogo nacional KMZ de estaciones
+    climatológicas del Servicio Meteorológico Nacional.
+    """
 
+    logger.info(
+        "Iniciando descarga del catálogo CONAGUA."
+    )
+
+    ruta = descargar_catalogo_conagua()
+
+    logger.success(
+        f"Catálogo CONAGUA disponible en: {ruta}"
+    )
+
+
+@app.command("conagua-estaciones")
+def conagua_estaciones(
+    catalogo: Path = typer.Option(
+        CONAGUA_PROCESSED_DIR
+        / "estaciones_seleccionadas_continentales_1981_2022.csv",
+        "--catalogo",
+        help="CSV con estaciones seleccionadas y URLs mensuales.",
+    ),
+    pausa: float = typer.Option(
+        1.0,
+        "--pausa",
+        min=0.0,
+        help="Segundos de espera entre descargas.",
+    ),
+):
+    """
+    Descarga los TXT mensuales de las estaciones
+    seleccionadas de CONAGUA.
+    """
+
+    if not catalogo.is_file():
+        logger.error(
+            f"No existe el catálogo de estaciones: {catalogo}"
+        )
+        raise typer.Exit(code=1)
+
+    estaciones = pd.read_csv(
+        catalogo,
+        dtype={"estacion": str},
+    )
+
+    logger.info(
+        f"Descargando {len(estaciones)} estaciones CONAGUA."
+    )
+
+    archivos = descargar_estaciones_conagua(
+        estaciones=estaciones,
+        pausa=pausa,
+    )
+
+    logger.success(
+        f"CONAGUA terminado. "
+        f"{len(archivos)} archivos TXT disponibles."
+    )
 if __name__ == "__main__":
     app()

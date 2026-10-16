@@ -32,6 +32,7 @@ FIGURES_DIR = REPORTS_DIR / "figures"
 AGRICULTURA_RAW_DIR = RAW_DATA_DIR / "agricultura"
 CLIMA_RAW_DIR = RAW_DATA_DIR / "clima"
 REFERENCES_DIR = PROJ_ROOT / "references"
+CONAGUA_RAW_DIR = CLIMA_RAW_DIR / "conagua"
 
 INEGI_INTERIM_DIR = INTERIM_DATA_DIR / "inegi"
 EDAFOLOGIA_RAW_DIR = RAW_DATA_DIR / "edafologia"
@@ -94,6 +95,30 @@ EDAFOLOGIA_DICCIONARIO_URL = (
 EDAFOLOGIA_DICCIONARIO_PATH = (
     EDAFOLOGIA_REFERENCES_DIR
     / "diccionario_datos_edafologicos_250k_v4.pdf"
+)
+
+CONAGUA_KMZ_PATH = (
+    CONAGUA_RAW_DIR / "EstacionesClimatologicas.kmz"
+)
+CONAGUA_KMZ_URL = (
+    "https://smn.conagua.gob.mx/tools/GUI/estaciones-climatologicas/data/EstacionesClimatologicas.kmz"
+)
+CONAGUA_INTERIM_DIR = (
+    INTERIM_DATA_DIR / "clima" / "conagua"
+)
+
+CONAGUA_PROCESSED_DIR = (
+    PROCESSED_DATA_DIR / "clima" / "conagua"
+)
+
+CONAGUA_ANIO_INICIAL = 1981
+CONAGUA_ANIO_FINAL = 2022
+
+CONAGUA_DISTANCIA_MIN_KM = 50
+
+CONAGUA_MEXICO_GEOJSON_URL = (
+    "https://www.geoboundaries.org/api/current/"
+    "gbOpen/MEX/ADM0/"
 )
 
 ESTADOS = {
