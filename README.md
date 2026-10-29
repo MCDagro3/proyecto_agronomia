@@ -103,59 +103,21 @@ Los archivos originales almacenados en `data/raw/` no son modificados.
 
 ---
 
-## 2. Datos climáticos — Open-Meteo Historical Weather API
+## 2. Datos climáticos — NASA POWER
 
-La segunda fuente principal corresponde a información climática
-histórica obtenida mediante **Open-Meteo Historical Weather API**,
-utilizando el modelo/reanálisis **ERA5**.
+El clima municipal de **2003–2025** utiliza **NASA POWER** como fuente
+climática única aprobada para el dataset analítico integrado.
 
-El periodo de consulta es igualmente **2003–2025**.
+NASA POWER aporta temperatura media a 2 m (`T2M`) y precipitación diaria
+corregida (`PRECTOTCORR`). Los valores diarios se agregan por municipio y
+año para obtener temperatura media anual y precipitación anual.
 
-Para cada municipio agrícola se consultan datos diarios de:
-
-- temperatura media a 2 m;
-- temperatura máxima a 2 m;
-- temperatura mínima a 2 m;
-- precipitación acumulada;
-- horas de precipitación;
-- evapotranspiración de referencia ET₀ (FAO).
-
-Los datos diarios son posteriormente agregados por municipio y año,
-obteniendo:
-
-- temperatura media anual;
-- temperatura máxima anual;
-- temperatura mínima anual;
-- precipitación anual;
-- número de días con lluvia;
-- horas de precipitación;
-- evapotranspiración anual.
-
-Debido al volumen de información solicitado y a los límites de la API,
-la descarga se realiza por entidad federativa y en pequeños lotes de
-municipios.
-
-Los resultados se almacenan progresivamente en:
+La descarga NASA se agrupa por celda meteorológica, conserva archivos JSON
+reanudables en `data/raw/clima_nasa/` y genera el consolidado:
 
 ```text
-data/raw/clima/
+data/processed/clima_nasa/clima_municipal_2003_2025.csv
 ```
-
-Ejemplo:
-
-```text
-clima_01_aguascalientes.csv
-clima_02_baja_california.csv
-clima_03_baja_california_sur.csv
-...
-clima_32_zacatecas.csv
-```
-
-El pipeline utiliza checkpoints por estado. Si un municipio ya cuenta
-con los 23 años esperados, sus datos no se solicitan nuevamente.
-
-Esto permite reanudar una descarga interrumpida sin perder el progreso
-obtenido anteriormente.
 
 ---
 
@@ -208,8 +170,8 @@ Geometrías municipales                   |
 Coordenadas representativas              |
         |                                |
         v                                |
-Open-Meteo / ERA5                        |
-Clima diario 2003–2025                   |
+NASA POWER                               |
+Clima municipal 2003–2025                |
         |                                |
         v                                |
 Agregación municipio-año                 |
@@ -331,7 +293,8 @@ Entre las notebooks de adquisición se encuentran:
 ```text
 notebooks/
 ├── descarga_agricola.ipynb
-└── descarga_clima.ipynb
+├── descarga_clima_conagua.ipynb
+└── descarga_clima_nasa.ipynb
 ```
 
 `descarga_agricola.ipynb` documenta:
@@ -348,14 +311,14 @@ Variables derivadas
 Validación
 ```
 
-`descarga_clima.ipynb` documenta:
+`descarga_clima_nasa.ipynb` documenta:
 
 ```text
 Municipios agrícolas
         ↓
 Coordenadas INEGI
         ↓
-Open-Meteo / ERA5
+NASA POWER
         ↓
 Agregación anual
         ↓
@@ -464,10 +427,10 @@ posibles problemas de fuga de información.
 │       │   ├── ...
 │       │   └── agricola_2025.csv
 │       │
-│       └── clima/
-│           ├── clima_01_aguascalientes.csv
-│           ├── ...
-│           └── clima_32_zacatecas.csv
+│       ├── clima/
+│       │   └── conagua/
+│       └── clima_nasa/
+│           └── nasa_celda_*.json
 │
 ├── docs/
 │
@@ -475,7 +438,9 @@ posibles problemas de fuga de información.
 │
 ├── notebooks/              <- Reproducible Jupyter notebooks
 │   ├── descarga_agricola.ipynb
-│   └── descarga_clima.ipynb
+│   ├── descarga_clima_conagua.ipynb
+│   ├── descarga_clima_nasa.ipynb
+│   └── integracion_agricultura_clima_refactor.ipynb
 │
 ├── references/             <- Data dictionaries and supporting material
 │

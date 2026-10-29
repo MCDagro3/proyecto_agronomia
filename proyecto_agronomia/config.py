@@ -65,10 +65,6 @@ AGRICULTURA_DICCIONARIO_PATH = (
     / "diccionario_datos_agricultura_dgsiap.xlsx"
 )
 
-OPEN_METEO_ARCHIVE_URL = (
-    "https://archive-api.open-meteo.com/v1/archive"
-)
-
 INEGI_MUNICIPIOS_URL_TEMPLATE = (
     "https://gaia.inegi.org.mx/"
     "wscatgeo/v2/geo/mgem/{clave_estado}"
@@ -112,7 +108,7 @@ CONAGUA_PROCESSED_DIR = (
 )
 
 CONAGUA_ANIO_INICIAL = 1981
-CONAGUA_ANIO_FINAL = 2022
+CONAGUA_ANIO_FINAL = 2025
 
 CONAGUA_DISTANCIA_MIN_KM = 50
 
@@ -120,6 +116,38 @@ CONAGUA_MEXICO_GEOJSON_URL = (
     "https://www.geoboundaries.org/api/current/"
     "gbOpen/MEX/ADM0/"
 )
+
+# ============================================================
+# NASA POWER - Datos climáticos históricos
+# ============================================================
+
+# API oficial de NASA POWER
+NASA_POWER_URL = (
+    "https://power.larc.nasa.gov/api/temporal/daily/point"
+)
+
+# Directorios de almacenamiento
+NASA_POWER_RAW_DIR = RAW_DATA_DIR / "clima_nasa"
+NASA_POWER_PROCESSED_DIR = PROCESSED_DATA_DIR / "clima_nasa"
+
+# Periodo climático completo del proyecto
+NASA_POWER_ANIO_INICIAL = 2003
+NASA_POWER_ANIO_FINAL = 2025
+
+# Parámetros meteorológicos
+NASA_POWER_PARAMETROS = [
+    "T2M",          # Temperatura media a 2 metros (°C)
+    "PRECTOTCORR",  # Precipitación corregida (mm/día)
+]
+
+# Configuración de las solicitudes
+NASA_POWER_COMMUNITY = "AG"
+NASA_POWER_FORMAT = "JSON"
+NASA_POWER_TIMEOUT = 120
+
+# Control de solicitudes para evitar errores HTTP 429
+NASA_POWER_PAUSA = 3
+NASA_POWER_MAX_REINTENTOS = 5
 
 ESTADOS = {
     1: "aguascalientes",
@@ -154,12 +182,6 @@ ESTADOS = {
     30: "veracruz",
     31: "yucatan",
     32: "zacatecas",
-}
-#Batches descarga del clima-------------------------------------------
-BATCHES_CLIMA = {
-    1: list(range(1, 16)),
-    2: list(range(16, 24)),
-    3: list(range(24, 33)),
 }
 # ---------------------------------------------------------------------
 # Analysis constants

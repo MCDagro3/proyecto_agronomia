@@ -9,13 +9,6 @@ from proyecto_agronomia.datasets.agricultura import (
     descargar_datos_agricolas,
     descargar_diccionario_agricola,
 )
-from proyecto_agronomia.datasets.clima import (
-    descargar_clima_batch,
-    descargar_clima_estado,
-    descargar_clima_estados,
-    descargar_clima_todos_estados,
-    obtener_clima_lote,
-)
 from proyecto_agronomia.datasets.edafologia import (
     descargar_diccionario_edafologia,
     descargar_edafologia_inegi,
