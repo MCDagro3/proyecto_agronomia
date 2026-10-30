@@ -105,19 +105,96 @@ Los archivos originales almacenados en `data/raw/` no son modificados.
 
 ## 2. Datos climáticos — NASA POWER
 
-El clima municipal de **2003–2025** utiliza **NASA POWER** como fuente
-climática única aprobada para el dataset analítico integrado.
+El proyecto utiliza **NASA POWER** como fuente climática aprobada para el
+dataset analítico. Se consultan datos diarios de:
 
-NASA POWER aporta temperatura media a 2 m (`T2M`) y precipitación diaria
-corregida (`PRECTOTCORR`). Los valores diarios se agregan por municipio y
-año para obtener temperatura media anual y precipitación anual.
+- temperatura media a 2 metros (`T2M`), en grados Celsius;
+- precipitación corregida (`PRECTOTCORR`), en milímetros por día.
 
-La descarga NASA se agrupa por celda meteorológica, conserva archivos JSON
-reanudables en `data/raw/clima_nasa/` y genera el consolidado:
+La cobertura climática comienza en **2002**, un año antes que los datos
+agrícolas. Esto permite construir correctamente el ciclo Otoño–Invierno de
+2003 utilizando octubre–diciembre de 2002 y enero–marzo de 2003.
+
+### Estrategia de descarga
+
+NASA POWER trabaja con una cuadrícula meteorológica. Los 2,478 puntos
+representativos municipales se agrupan por celda para evitar solicitudes
+repetidas sobre la misma información climática.
+
+Los resultados diarios se conservan como JSON en:
 
 ```text
-data/processed/clima_nasa/clima_municipal_2003_2025.csv
+data/raw/clima_nasa/
 ```
+
+Estos archivos funcionan como caché reanudable:
+
+- un JSON completo no se vuelve a descargar;
+- una interrupción de Internet no obliga a reiniciar todo el proceso;
+- la escritura se realiza primero en un archivo temporal;
+- el archivo definitivo aparece únicamente después de terminar la respuesta.
+
+La descarga utiliza reintentos con espera progresiva para errores temporales
+de conexión, límites de solicitudes y respuestas HTTP recuperables.
+
+### Dataset climático mensual
+
+Los datos diarios se agregan por municipio, año y mes. Para cada mes se
+calcula:
+
+```text
+temperatura_media_mes_c = promedio de T2M
+precipitacion_mes_mm     = suma de PRECTOTCORR
+```
+
+Un valor mensual solamente se acepta cuando están disponibles todos los días
+esperados del mes. También se conservan `dias_esperados`,
+`dias_temperatura` y `dias_precipitacion` para comprobar la cobertura.
+
+El producto climático analítico base es:
+
+```text
+data/processed/clima_nasa/clima_municipal_mensual_2002_2025.csv
+```
+
+Su llave única es:
+
+```text
+cvegeo + anio + mes
+```
+
+El archivo contiene **713,664 registros**:
+
+```text
+2,478 municipios × 24 años × 12 meses
+```
+
+El dataset mensual se mantiene independiente porque permite construir sin una
+nueva descarga:
+
+- trimestres calendario;
+- estaciones meteorológicas;
+- ventanas móviles;
+- periodos de siembra, floración o cosecha;
+- agregaciones específicas por cultivo;
+- ciclos Otoño–Invierno, Primavera–Verano y Perennes.
+
+El antiguo consolidado anual puede conservarse como producto derivado, pero
+el archivo mensual es la fuente climática procesada de mayor granularidad.
+
+### Ejecución del flujo climático
+
+1. Abrir `notebooks/descarga_clima_nasa.ipynb`.
+2. Preparar los puntos representativos municipales de INEGI.
+3. Ejecutar la agregación con `EJECUTAR_AGREGACION_MENSUAL = True`.
+4. Validar las 12 observaciones mensuales por municipio y año.
+5. Cambiar la bandera a `False` después de generar el CSV.
+6. Ejecutar `notebooks/integracion_agricultura_clima.ipynb`.
+
+La integración no une directamente las 12 filas mensuales con cada registro
+agrícola, porque eso multiplicaría las observaciones. Primero transforma los
+meses a columnas y después calcula temperatura media y precipitación acumulada
+para el ciclo productivo correspondiente.
 
 ---
 
@@ -143,8 +220,9 @@ Se identificaron:
 - **2,452 municipios** presentes en los datos agrícolas de 2003–2025;
 - **0 municipios agrícolas sin coordenadas** después de la integración.
 
-Por lo tanto, el universo objetivo para la adquisición climática está
-formado por **2,452 municipios agrícolas**.
+La adquisición climática se realizó para los **2,478 municipios** disponibles
+en la capa nacional. La integración agrícola utiliza el subconjunto de claves
+municipales presente en los registros de producción.
 
 ---
 
@@ -171,12 +249,15 @@ Coordenadas representativas              |
         |                                |
         v                                |
 NASA POWER                               |
-Clima municipal 2003–2025                |
+Datos diarios 2002–2025                  |
         |                                |
         v                                |
-Agregación municipio-año                 |
+Agregación municipio-año-mes             |
         |                                |
         +--------------------------------+
+                     |
+                     v
+       Ventanas según ciclo productivo
                      |
                      v
           Dataset analítico integrado
@@ -185,16 +266,22 @@ Agregación municipio-año                 |
               data/processed/
 ```
 
-La integración agrícola-climática utiliza principalmente la llave:
+La tabla mensual utiliza la llave:
 
 ```text
-Anio
-Idestado
-Idmunicipio
+cvegeo + anio + mes
 ```
 
-Las observaciones agrícolas mantienen además sus dimensiones propias,
-como cultivo, ciclo productivo y modalidad.
+Antes de la integración, los meses se convierten a características y se
+construyen ventanas climáticas coherentes con `Nomcicloproductivo`:
+
+- Otoño–Invierno: octubre–diciembre anterior y enero–marzo actual;
+- Primavera–Verano: abril–septiembre actual;
+- Perennes: enero–diciembre actual.
+
+La unión final usa `cvegeo`, `Anio` y el ciclo productivo, con validación
+`many_to_one`. Las observaciones agrícolas conservan además cultivo,
+modalidad, superficies y variables de producción.
 
 ---
 
@@ -314,15 +401,29 @@ Validación
 `descarga_clima_nasa.ipynb` documenta:
 
 ```text
-Municipios agrícolas
+Municipios de INEGI
         ↓
-Coordenadas INEGI
+Puntos representativos
         ↓
-NASA POWER
+Agrupación por celda NASA POWER
         ↓
-Agregación anual
+JSON diarios reanudables
         ↓
-Validación
+Agregación mensual 2002–2025
+        ↓
+Validación municipio-año-mes
+```
+
+La lógica reutilizable se encuentra en:
+
+```text
+proyecto_agronomia/datasets/clima_nasa.py
+```
+
+La integración posterior se ejecuta en:
+
+```text
+notebooks/integracion_agricultura_clima.ipynb
 ```
 
 ---
@@ -419,7 +520,10 @@ posibles problemas de fuga de información.
 │   │       └── municipios_coordenadas_inegi.csv
 │   │
 │   ├── processed/          <- Canonical datasets for analysis/modeling
-│   │   └── agricultura_features.csv
+│   │   ├── agricultura_features.csv
+│   │   ├── agricultura_clima_2003_2025.csv
+│   │   └── clima_nasa/
+│   │       └── clima_municipal_mensual_2002_2025.csv
 │   │
 │   └── raw/                <- Original immutable data
 │       ├── agricultura/
@@ -430,7 +534,8 @@ posibles problemas de fuga de información.
 │       ├── clima/
 │       │   └── conagua/
 │       └── clima_nasa/
-│           └── nasa_celda_*.json
+│           ├── nasa_celda_*.json
+│           └── nasa_?????_2023_2025.json
 │
 ├── docs/
 │
@@ -440,7 +545,8 @@ posibles problemas de fuga de información.
 │   ├── descarga_agricola.ipynb
 │   ├── descarga_clima_conagua.ipynb
 │   ├── descarga_clima_nasa.ipynb
-│   └── integracion_agricultura_clima_refactor.ipynb
+│   ├── integracion_agricultura_clima.ipynb
+│   └── analisis_exploratorio.ipynb
 │
 ├── references/             <- Data dictionaries and supporting material
 │
@@ -453,6 +559,8 @@ posibles problemas de fuga de información.
     ├── __init__.py
     ├── config.py            <- Paths and project configuration
     ├── dataset.py           <- Data acquisition
+    ├── datasets/
+    │   └── clima_nasa.py    <- NASA POWER download and aggregation
     ├── features.py          <- Transformations and feature engineering
     ├── plots.py             <- Visualization functions
     │
