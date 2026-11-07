@@ -23,6 +23,7 @@ dependencies = [
     "duckdb>=2.0.0",
     "geopandas>=1.2.0",
     "httpx>=0.28.1",
+    "imageio>=2.38.1",
     "ipykernel>=7.3.0",
     "jupyter>=1.1.1",
     "lxml[html-clean]>=6.1.3",
