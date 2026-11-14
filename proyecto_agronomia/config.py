@@ -131,8 +131,8 @@ NASA_POWER_RAW_DIR = RAW_DATA_DIR / "clima_nasa"
 NASA_POWER_PROCESSED_DIR = PROCESSED_DATA_DIR / "clima_nasa"
 
 # Periodo climático completo del proyecto
-NASA_POWER_ANIO_INICIAL = 2003
-NASA_POWER_ANIO_FINAL = 2025
+NASA_POWER_ANIO_INICIAL = ANIO_INICIAL
+NASA_POWER_ANIO_FINAL = ANIO_FINAL
 
 # Parámetros meteorológicos
 NASA_POWER_PARAMETROS = [
@@ -141,9 +141,9 @@ NASA_POWER_PARAMETROS = [
 ]
 
 # Configuración de las solicitudes
-NASA_POWER_COMMUNITY = "AG"
-NASA_POWER_FORMAT = "JSON"
-NASA_POWER_TIMEOUT = 120
+NASA_POWER_COMMUNITY = "AG"  # ¿Que es "AG"?
+NASA_POWER_FORMAT = "JSON"   # Extrae la información en formato JSON.
+NASA_POWER_TIMEOUT = 120     # Tiempo de espera a la API de la NASA.
 
 # Control de solicitudes para evitar errores HTTP 429
 NASA_POWER_PAUSA = 3
@@ -187,7 +187,7 @@ ESTADOS = {
 # Analysis constants
 # ---------------------------------------------------------------------
 
-TOP_N = 15
+TOP_N = 15  # ¿Que es TOP_N?
 
 # ---------------------------------------------------------------------
 # Logging
