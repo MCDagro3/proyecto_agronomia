@@ -30,6 +30,7 @@ FIGURES_DIR = REPORTS_DIR / "figures"
 # ---------------------------------------------------------------------
 
 AGRICULTURA_RAW_DIR = RAW_DATA_DIR / "agricultura"
+DGSIAP_DIR = PROJ_ROOT / 'data_david/process/DGSIAP'
 CLIMA_RAW_DIR = RAW_DATA_DIR / "clima"
 REFERENCES_DIR = PROJ_ROOT / "references"
 CONAGUA_RAW_DIR = CLIMA_RAW_DIR / "conagua"
