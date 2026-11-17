@@ -4,6 +4,12 @@ import pandas as pd
 from sklearn.neighbors import BallTree
 
 
+NOMBRES_MESES = {
+    1: "ene", 2: "feb", 3: "mar", 4: "abr", 5: "may", 6: "jun",
+    7: "jul", 8: "ago", 9: "sep", 10: "oct", 11: "nov", 12: "dic",
+}
+
+
 def crear_clave_municipal(df):
     """Agrega cvegeo (2 dígitos entidad + 3 municipio) sin modificar el origen."""
     resultado = df.copy()
@@ -11,6 +17,135 @@ def crear_clave_municipal(df):
         resultado["Idestado"].astype(int).astype(str).str.zfill(2)
         + resultado["Idmunicipio"].astype(int).astype(str).str.zfill(3)
     )
+    return resultado
+
+
+def validar_clima_mensual(
+    clima: pd.DataFrame,
+    anio_inicial: int = 2002,
+    anio_final: int = 2025,
+) -> pd.DataFrame:
+    """Valida llave, cobertura temporal y completitud del clima NASA mensual."""
+    requeridas = {
+        "cvegeo", "anio", "mes", "temperatura_media_mes_c",
+        "precipitacion_mes_mm", "dias_esperados", "dias_temperatura",
+        "dias_precipitacion",
+    }
+    faltantes = requeridas - set(clima.columns)
+    if faltantes:
+        raise KeyError(f"Faltan columnas climáticas: {sorted(faltantes)}")
+    resultado = clima.copy()
+    resultado["cvegeo"] = resultado["cvegeo"].astype("string").str.zfill(5)
+    clave = ["cvegeo", "anio", "mes"]
+    if resultado.duplicated(clave).any():
+        raise ValueError("El clima mensual contiene llaves duplicadas.")
+    if set(resultado["mes"].dropna().unique()) != set(range(1, 13)):
+        raise ValueError("La cobertura mensual no contiene exactamente los meses 1-12.")
+    esperados = set(range(anio_inicial, anio_final + 1))
+    encontrados = set(resultado["anio"].dropna().unique())
+    if encontrados != esperados:
+        raise ValueError(
+            f"Cobertura anual inesperada; faltan={sorted(esperados-encontrados)}, "
+            f"sobran={sorted(encontrados-esperados)}"
+        )
+    indicadores = ["temperatura_media_mes_c", "precipitacion_mes_mm"]
+    if resultado[indicadores].isna().any().any():
+        raise ValueError("Existen valores climáticos mensuales nulos.")
+    if not resultado["dias_temperatura"].eq(resultado["dias_esperados"]).all():
+        raise ValueError("Existen meses incompletos de temperatura.")
+    if not resultado["dias_precipitacion"].eq(resultado["dias_esperados"]).all():
+        raise ValueError("Existen meses incompletos de precipitación.")
+    return resultado.sort_values(clave).reset_index(drop=True)
+
+
+def construir_clima_mensual_ancho(clima: pd.DataFrame) -> pd.DataFrame:
+    """Convierte los meses actuales y octubre-diciembre anteriores en columnas."""
+    indice = ["cvegeo", "anio"]
+    temperatura = clima.pivot(
+        index=indice, columns="mes", values="temperatura_media_mes_c"
+    ).rename(columns={m: f"temperatura_{n}_c" for m, n in NOMBRES_MESES.items()})
+    precipitacion = clima.pivot(
+        index=indice, columns="mes", values="precipitacion_mes_mm"
+    ).rename(columns={m: f"precipitacion_{n}_mm" for m, n in NOMBRES_MESES.items()})
+    anteriores = clima.loc[clima["mes"].isin([10, 11, 12])].copy()
+    anteriores["anio"] += 1
+    temperatura_anterior = anteriores.pivot(
+        index=indice, columns="mes", values="temperatura_media_mes_c"
+    ).rename(
+        columns={m: f"temperatura_{NOMBRES_MESES[m]}_anterior_c" for m in [10, 11, 12]}
+    )
+    precipitacion_anterior = anteriores.pivot(
+        index=indice, columns="mes", values="precipitacion_mes_mm"
+    ).rename(
+        columns={
+            m: f"precipitacion_{NOMBRES_MESES[m]}_anterior_mm"
+            for m in [10, 11, 12]
+        }
+    )
+    return (
+        temperatura.join(precipitacion, validate="one_to_one")
+        .join(temperatura_anterior, validate="one_to_one")
+        .join(precipitacion_anterior, validate="one_to_one")
+        .reset_index()
+    )
+
+
+def resumir_clima_por_ciclo(clima: pd.DataFrame) -> pd.DataFrame:
+    """Resume temperatura ponderada y precipitación según el ciclo productivo."""
+    columnas = [
+        "cvegeo", "anio", "temperatura_media_mes_c",
+        "precipitacion_mes_mm", "dias_esperados",
+    ]
+    oi_actual = clima.loc[clima["mes"].isin([1, 2, 3]), columnas].copy()
+    oi_actual["Nomcicloproductivo"] = "Otoño-Invierno"
+    oi_anterior = clima.loc[clima["mes"].isin([10, 11, 12]), columnas].copy()
+    oi_anterior["anio"] += 1
+    oi_anterior["Nomcicloproductivo"] = "Otoño-Invierno"
+    primavera_verano = clima.loc[clima["mes"].between(4, 9), columnas].copy()
+    primavera_verano["Nomcicloproductivo"] = "Primavera-Verano"
+    perennes = clima[columnas].copy()
+    perennes["Nomcicloproductivo"] = "Perennes"
+    ventanas = pd.concat(
+        [oi_anterior, oi_actual, primavera_verano, perennes], ignore_index=True
+    )
+    ventanas["temperatura_por_dias"] = (
+        ventanas["temperatura_media_mes_c"] * ventanas["dias_esperados"]
+    )
+    resumen = ventanas.groupby(
+        ["cvegeo", "anio", "Nomcicloproductivo"], as_index=False
+    ).agg(
+        temperatura_por_dias=("temperatura_por_dias", "sum"),
+        precipitacion_ciclo_mm=("precipitacion_mes_mm", "sum"),
+        dias_clima_ciclo=("dias_esperados", "sum"),
+    )
+    resumen["temperatura_media_ciclo_c"] = (
+        resumen.pop("temperatura_por_dias") / resumen["dias_clima_ciclo"]
+    )
+    return resumen
+
+
+def integrar_agricultura_clima(
+    agricultura: pd.DataFrame,
+    clima_ciclos: pd.DataFrame,
+    clima_ancho: pd.DataFrame,
+) -> pd.DataFrame:
+    """Añade clima por ciclo y por mes sin multiplicar registros agrícolas."""
+    resultado = agricultura.merge(
+        clima_ciclos,
+        left_on=["cvegeo", "Anio", "Nomcicloproductivo"],
+        right_on=["cvegeo", "anio", "Nomcicloproductivo"],
+        how="left",
+        validate="many_to_one",
+    ).drop(columns="anio")
+    resultado = resultado.merge(
+        clima_ancho,
+        left_on=["cvegeo", "Anio"],
+        right_on=["cvegeo", "anio"],
+        how="left",
+        validate="many_to_one",
+    ).drop(columns="anio")
+    if len(resultado) != len(agricultura):
+        raise AssertionError("La integración climática alteró el número de registros.")
     return resultado
 
 

@@ -380,7 +380,6 @@ Entre las notebooks de adquisición se encuentran:
 ```text
 notebooks/
 ├── descarga_agricola.ipynb
-├── descarga_clima_conagua.ipynb
 └── descarga_clima_nasa.ipynb
 ```
 
@@ -532,7 +531,6 @@ posibles problemas de fuga de información.
 │       │   └── agricola_2025.csv
 │       │
 │       ├── clima/
-│       │   └── conagua/
 │       └── clima_nasa/
 │           ├── nasa_celda_*.json
 │           └── nasa_?????_2023_2025.json
@@ -543,7 +541,6 @@ posibles problemas de fuga de información.
 │
 ├── notebooks/              <- Reproducible Jupyter notebooks
 │   ├── descarga_agricola.ipynb
-│   ├── descarga_clima_conagua.ipynb
 │   ├── descarga_clima_nasa.ipynb
 │   ├── integracion_agricultura_clima.ipynb
 │   └── analisis_exploratorio.ipynb

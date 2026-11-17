@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Storytelling del análisis agrícola, climático y edafológico de México entre 2003 y 2025.">
+  <title>Sembrar donde florece · Agricultura en México</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="chrome" aria-label="Controles de presentación">
+    <a class="brand" href="#inicio" aria-label="Ir al inicio">
+      <span class="brand-mark">MX</span>
+      <span>Sembrar donde florece</span>
+    </a>
+    <div class="chrome-actions">
+      <span id="counter" aria-live="polite">01 / 09</span>
+      <button id="fullscreen" type="button" aria-label="Ver en pantalla completa">Pantalla completa</button>
+    </div>
+    <div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
+  </header>
+
+  <nav class="rail" aria-label="Secciones">
+    <a href="#inicio" aria-label="Inicio"></a>
+    <a href="#datos" aria-label="Datos"></a>
+    <a href="#clima" aria-label="Clima"></a>
+    <a href="#suelo" aria-label="Suelo"></a>
+    <a href="#territorio" aria-label="Territorio"></a>
+    <a href="#estabilidad" aria-label="Presencia y estabilidad"></a>
+    <a href="#modelos" aria-label="Modelos"></a>
+    <a href="#ciclos" aria-label="Redistribución por ciclos"></a>
+    <a href="#redistribucion" aria-label="Redistribución"></a>
+    <a href="#impacto" aria-label="Impacto"></a>
+    <a href="#limites" aria-label="Límites"></a>
+  </nav>
+
+  <main>
+    <section id="inicio" class="slide hero" data-index="1">
+      <div class="eyebrow">México · 2003—2025</div>
+      <div class="hero-grid">
+        <div>
+          <h1>¿Y si cultiváramos cada producto donde tiene mejores condiciones?</h1>
+          <p class="lead">Una historia construida con producción agrícola, clima de NASA POWER y suelos de INEGI para explorar una redistribución territorial responsable.</p>
+          <a class="next-link" href="#datos">Comenzar la historia <span>↓</span></a>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="sun"></div>
+          <div class="field field-a"></div>
+          <div class="field field-b"></div>
+          <div class="field field-c"></div>
+          <div class="seed seed-a"></div>
+          <div class="seed seed-b"></div>
+          <div class="seed seed-c"></div>
+        </div>
+      </div>
+      <p class="source-note">Proyecto de Ciencia de Datos · Fuentes: DGSIAP, NASA POWER e INEGI</p>
+    </section>
+
+    <section id="datos" class="slide paper" data-index="2">
+      <div class="section-number">01 · La base</div>
+      <div class="content-grid">
+        <div>
+          <h2>Veintitrés años para leer el territorio</h2>
+          <p class="lead dark">Integramos agricultura, clima mensual y características dominantes del suelo a escala municipal.</p>
+        </div>
+        <div class="stat-grid">
+          <article><strong>825,089</strong><span>registros integrados</span></article>
+          <article><strong>2,452</strong><span>municipios con información</span></article>
+          <article><strong>385</strong><span>cultivos registrados</span></article>
+          <article><strong>23</strong><span>años comparables</span></article>
+        </div>
+      </div>
+      <div class="data-ribbon" aria-label="Flujo de datos">
+        <span>Producción DGSIAP</span><i>+</i><span>Clima NASA</span><i>+</i><span>Suelo INEGI</span><i>→</i><b>Municipio · cultivo · año</b>
+      </div>
+    </section>
+
+    <section id="clima" class="slide dark-slide" data-index="3">
+      <div class="section-number light">02 · El clima se mueve</div>
+      <div class="media-layout">
+        <div class="copy-panel">
+          <h2>La temperatura y la lluvia no respetan fronteras agrícolas</h2>
+          <p>El recorrido mensual revela sequías, temporadas húmedas y contrastes regionales que una media anual escondería.</p>
+          <div class="legend-inline"><span class="cold"></span>Temperatura <span class="rain"></span>Precipitación</div>
+        </div>
+        <figure class="gif-frame">
+          <img src="../figures/clima_mensual_mexico_2003_2025.gif" alt="Animación mensual de temperatura y precipitación municipal en México entre 2003 y 2025">
+          <figcaption>Clima municipal mensual · NASA POWER</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="suelo" class="slide soil-slide" data-index="4">
+      <div class="section-number">03 · El suelo permanece</div>
+      <div class="soil-layout">
+        <div>
+          <h2>Debajo de cada cosecha hay una geografía distinta</h2>
+          <p class="lead dark">Los grupos de suelo cambian en textura, profundidad y limitaciones. Esa diversidad condiciona qué cultivos pueden sostenerse, aun bajo un clima favorable.</p>
+          <div class="soil-note"><b>INEGI Serie III</b><span>Grupos principales WRB a escala 1:250,000</span></div>
+        </div>
+        <figure class="soil-frame">
+          <img src="../figures/mapa_edafologia_grupos_suelo_mexico.png" alt="Mapa nacional de los grupos principales de suelo de México según INEGI Serie III">
+          <figcaption>Distribución nacional de grupos edafológicos dominantes</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="territorio" class="slide clay" data-index="5">
+      <div class="section-number">04 · La pregunta</div>
+      <div class="question-layout">
+        <blockquote>Producir mucho en un lugar puede venir de la tradición, del manejo… o de una combinación favorable de clima y suelo.</blockquote>
+        <div class="three-factors">
+          <article><span>01</span><h3>Clima</h3><p>Temperatura y precipitación alineadas con cada ciclo productivo.</p></article>
+          <article><span>02</span><h3>Suelo</h3><p>Grupo dominante, textura y fases físicas y químicas.</p></article>
+          <article><span>03</span><h3>Experiencia</h3><p>Persistencia histórica, modalidad y desempeño no explicado.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="estabilidad" class="slide stability-slide" data-index="6">
+      <div class="section-number">05 · Presencia y estabilidad</div>
+      <div class="stability-heading">
+        <div>
+          <h2>La tradición productiva también deja una huella territorial</h2>
+          <p class="lead dark">Selecciona un cultivo para observar dónde mantiene presencia histórica y qué tan variable ha sido su rendimiento municipal.</p>
+        </div>
+        <label class="crop-control" for="crop-selector">
+          <span>Cultivo</span>
+          <select id="crop-selector" aria-label="Seleccionar cultivo"></select>
+        </label>
+      </div>
+      <div class="stability-layout">
+        <figure class="interactive-map-frame">
+          <svg id="stability-map" viewBox="0 0 1000 600" role="img" aria-label="Mapa interactivo de presencia y estabilidad municipal"></svg>
+          <figcaption>Verde = rendimiento más estable · Rojo = mayor variabilidad · Sin punto = historial insuficiente o sin presencia</figcaption>
+        </figure>
+        <aside class="stability-summary" aria-live="polite">
+          <article><strong id="presence-count">—</strong><span>municipios con presencia histórica</span></article>
+          <article><strong id="median-cv">—</strong><span>coeficiente de variación mediano</span></article>
+          <article><strong id="median-yield">—</strong><span>rendimiento histórico mediano (t/ha)</span></article>
+          <p id="stability-reading">Selecciona un cultivo para explorar su huella.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="modelos" class="slide paper" data-index="7">
+      <div class="section-number">06 · Aprender sin memorizar</div>
+      <div class="model-layout">
+        <div>
+          <h2>Modelos que viajan en el tiempo y en el espacio</h2>
+          <p class="lead dark">Entrenamos con años anteriores y reservamos municipios completos para saber si el patrón se sostiene fuera de los lugares conocidos.</p>
+          <div class="validation-flow"><span>2003—2021<br><b>entrenamiento</b></span><i>→</i><span>2022—2025<br><b>prueba temporal</b></span><i>+</i><span>municipios nuevos<br><b>prueba espacial</b></span></div>
+        </div>
+        <div class="model-score">
+          <div class="big-number">89</div><p>cultivos con modelo entrenado</p>
+          <div class="quality"><b>22</b><span>superan R² espacial de 0.50</span></div>
+          <small>Solo éstos entran al escenario de redistribución.</small>
+        </div>
+      </div>
+    </section>
+
+    <section id="ciclos" class="slide cycles-slide" data-index="8">
+      <div class="section-number light">07 · Cada ciclo dibuja otro México agrícola</div>
+      <div class="cycles-heading">
+        <div>
+          <h2>Redistribuir también exige respetar cuándo se cultiva</h2>
+          <p>La presencia territorial cambia entre Otoño–Invierno, Primavera–Verano y Perennes. Por eso el intercambio se calcula dentro de cada ciclo y modalidad, no sobre una sola fotografía nacional.</p>
+        </div>
+        <div class="cycle-rule"><b>Misma superficie</b><span>por municipio · ciclo · modalidad</span></div>
+      </div>
+      <div class="cycles-media">
+        <figure>
+          <img src="../figures/cultivos_ciclos_2003_2025.gif" alt="Animación histórica de los cultivos predominantes por ciclo productivo entre 2003 y 2025">
+          <figcaption>Historia observada · Cultivo predominante por ciclo, 2003—2025</figcaption>
+        </figure>
+        <figure>
+          <img src="../figures/redistribucion_cultivos_por_ciclo_intermedio.png" alt="Comparación de la distribución original y el escenario intermedio para cada ciclo productivo">
+          <figcaption>Escenario intermedio · Distribución original frente a redistribución por ciclo</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="redistribucion" class="slide map-slide" data-index="9">
+      <div class="section-number">08 · Cambiar dónde, no cuánto</div>
+      <div class="map-heading">
+        <div><h2>Una redistribución por intercambios</h2><p>Se conserva la superficie municipal y la superficie nacional de cada cultivo. El escenario intermedio mueve solo una fracción de la distribución observada.</p></div>
+        <div class="map-kpi"><strong>104</strong><span>municipios cambian de cultivo dominante</span></div>
+      </div>
+      <figure class="map-frame">
+        <img src="../figures/redistribucion_cultivos_original_vs_intermedio.png" alt="Comparación cartográfica entre la distribución agrícola original de 2025 y el escenario intermedio">
+        <figcaption>Izquierda: distribución original 2025 · Derecha: escenario intermedio</figcaption>
+      </figure>
+    </section>
+
+    <section id="impacto" class="slide harvest" data-index="10">
+      <div class="section-number light">09 · El potencial</div>
+      <div class="impact-layout">
+        <div>
+          <h2>Más producción esperada, sin crear tierra nueva</h2>
+          <p>La ganancia es una estimación del modelo bajo condiciones recientes, no una promesa de cosecha.</p>
+        </div>
+        <div class="bars" aria-label="Ganancia estimada por escenario">
+          <div class="bar-row"><span>Conservador</span><div><i style="--w:25%"></i></div><strong>+2.34%</strong><small>+1.37 Mt</small></div>
+          <div class="bar-row"><span>Intermedio</span><div><i style="--w:62%"></i></div><strong>+5.84%</strong><small>+3.42 Mt</small></div>
+          <div class="bar-row"><span>Exploratorio</span><div><i style="--w:100%"></i></div><strong>+9.34%</strong><small>+5.48 Mt</small></div>
+        </div>
+      </div>
+      <div class="baseline">Línea base modelada: <b>58.66 millones de toneladas</b></div>
+    </section>
+
+    <section id="limites" class="slide final" data-index="11">
+      <div class="section-number light">10 · La lectura responsable</div>
+      <div class="final-grid">
+        <div>
+          <h2>Un mapa de oportunidades, no una orden de reconversión</h2>
+          <p class="lead">La evidencia permite preguntar mejor dónde explorar. La decisión real pertenece a productores, comunidades y políticas públicas.</p>
+        </div>
+        <div class="limits">
+          <h3>Todavía falta incorporar</h3>
+          <ul>
+            <li>Disponibilidad y costo del agua</li>
+            <li>Rentabilidad, demanda y logística</li>
+            <li>Rotaciones, perennes e infraestructura</li>
+            <li>Incertidumbre climática futura</li>
+            <li>Conocimiento local de productores</li>
+          </ul>
+        </div>
+      </div>
+      <footer><span>Sembrar donde florece</span><span>Proyecto Agronomía · 2026</span></footer>
+    </section>
+  </main>
+
+  <div class="keyboard-hint" aria-hidden="true">← → para navegar</div>
+  <script src="estabilidad_data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

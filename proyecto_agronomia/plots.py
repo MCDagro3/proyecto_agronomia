@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from proyecto_agronomia.config import FIGURES_DIR
+from proyecto_agronomia.datasets.edafologia import GRUPOS_SUELO_WRB
 
 
 COLUMNAS_AGRICOLAS = {
@@ -44,18 +45,6 @@ NOMBRES_MESES = {
     11: "Noviembre",
     12: "Diciembre",
 }
-
-GRUPOS_SUELO_WRB = {
-    "AC": "Acrisol", "AL": "Alisol", "AN": "Andosol", "AT": "Anthrosol",
-    "AR": "Arenosol", "CL": "Calcisol", "CM": "Cambisol", "CH": "Chernozem",
-    "CR": "Cryosol", "DU": "Durisol", "FR": "Ferralsol", "FL": "Fluvisol",
-    "GL": "Gleysol", "GY": "Gypsisol", "HS": "Histosol", "KS": "Kastanozem",
-    "LP": "Leptosol", "LX": "Lixisol", "LV": "Luvisol", "NT": "Nitisol",
-    "PH": "Phaeozem", "PL": "Planosol", "PT": "Plinthosol", "PZ": "Podzol",
-    "RG": "Regosol", "RT": "Retisol", "SC": "Solonchak", "SN": "Solonetz",
-    "ST": "Stagnosol", "TC": "Technosol", "UM": "Umbrisol", "VR": "Vertisol",
-}
-
 
 def crear_mapa_edafologia(
     edafologia: gpd.GeoDataFrame,
@@ -592,3 +581,684 @@ def crear_animacion_clima_mensual(
     animacion.save(ruta_salida, writer=PillowWriter(fps=fps), dpi=dpi)
     plt.close(fig)
     return ruta_salida
+def plot_varianza_reduccion(reductor):
+    """Grafica la varianza acumulada de una reduccion tipo PCA/SVD."""
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    acumulada = np.cumsum(reductor.explained_variance_ratio_) * 100
+    figura, eje = plt.subplots(figsize=(9, 5))
+    eje.plot(range(1, len(acumulada) + 1), acumulada, marker="o", markersize=3)
+    eje.set(
+        title="Varianza explicada acumulada por componentes",
+        xlabel="Numero de componentes",
+        ylabel="Varianza explicada acumulada (%)",
+    )
+    eje.grid(alpha=0.25)
+    figura.tight_layout()
+    return figura, eje
+
+
+def _cultivo_dominante_por_superficie(
+    escenarios: pd.DataFrame,
+    columna_superficie: str,
+) -> pd.DataFrame:
+    """Resume el cultivo con mayor superficie de cada municipio."""
+    requeridas = {"cvegeo", "Nomcultivo", columna_superficie}
+    faltantes = requeridas - set(escenarios.columns)
+    if faltantes:
+        raise KeyError(f"Faltan columnas para el mapa: {sorted(faltantes)}")
+    datos = escenarios[["cvegeo", "Nomcultivo", columna_superficie]].copy()
+    datos["cvegeo"] = datos["cvegeo"].astype("string").str.zfill(5)
+    datos[columna_superficie] = pd.to_numeric(
+        datos[columna_superficie], errors="coerce"
+    ).fillna(0)
+    resumen = (
+        datos.groupby(["cvegeo", "Nomcultivo"], as_index=False, observed=True)
+        [columna_superficie].sum()
+    )
+    resumen = resumen.loc[resumen[columna_superficie].gt(0)]
+    return (
+        resumen.sort_values(
+            ["cvegeo", columna_superficie, "Nomcultivo"],
+            ascending=[True, False, True],
+        )
+        .drop_duplicates("cvegeo")
+        .rename(columns={"Nomcultivo": "cultivo_dominante"})
+        .reset_index(drop=True)
+    )
+
+
+def crear_mapa_redistribucion_cultivos(
+    escenarios: pd.DataFrame,
+    municipios: gpd.GeoDataFrame,
+    escenario: str = "intermedio",
+    ruta_salida: str | Path | None = (
+        FIGURES_DIR / "redistribucion_cultivos_original_vs_intermedio.png"
+    ),
+    figsize: tuple[int, int] = (18, 9),
+    dpi: int = 160,
+):
+    """Compara el cultivo dominante municipal antes y despues del intercambio."""
+    columna_nueva = f"superficie_{escenario}_ha"
+    if columna_nueva not in escenarios.columns:
+        raise KeyError(f"No existe la superficie del escenario {escenario!r}.")
+    geometrias = preparar_geometrias_municipales(municipios)
+    original = _cultivo_dominante_por_superficie(
+        escenarios, "superficie_base_ha"
+    ).rename(columns={"cultivo_dominante": "cultivo_original"})
+    nueva = _cultivo_dominante_por_superficie(
+        escenarios, columna_nueva
+    ).rename(columns={"cultivo_dominante": "cultivo_nuevo"})
+    comparacion = original[["cvegeo", "cultivo_original"]].merge(
+        nueva[["cvegeo", "cultivo_nuevo"]],
+        on="cvegeo",
+        how="outer",
+        validate="one_to_one",
+    )
+    comparacion["cambio_dominante"] = (
+        comparacion["cultivo_original"].notna()
+        & comparacion["cultivo_nuevo"].notna()
+        & comparacion["cultivo_original"].ne(comparacion["cultivo_nuevo"])
+    )
+    mapa = geometrias.merge(comparacion, on="cvegeo", how="left", validate="one_to_one")
+    cultivos = sorted(set(
+        comparacion["cultivo_original"].dropna()
+    ) | set(comparacion["cultivo_nuevo"].dropna()))
+    paleta = _paleta_cultivos(cultivos)
+
+    fig, ejes = plt.subplots(1, 2, figsize=figsize)
+    configuraciones = [
+        ("cultivo_original", "Distribucion original · 2025"),
+        ("cultivo_nuevo", f"Redistribucion · escenario {escenario}"),
+    ]
+    for eje, (columna, titulo) in zip(ejes, configuraciones):
+        colores = mapa[columna].map(paleta).fillna("#eeeeee")
+        mapa.plot(ax=eje, color=colores, edgecolor="white", linewidth=0.06)
+        eje.set_axis_off()
+        eje.set_title(titulo, fontsize=15)
+
+    cambios = int(comparacion["cambio_dominante"].sum())
+    fig.suptitle(
+        f"Cultivo dominante por superficie municipal · {cambios:,} municipios cambian",
+        fontsize=17,
+    )
+    leyenda = [Patch(facecolor=paleta[cultivo], label=cultivo) for cultivo in cultivos]
+    leyenda.append(Patch(facecolor="#eeeeee", label="Sin superficie elegible"))
+    fig.legend(
+        handles=leyenda,
+        title="Cultivo dominante",
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.01),
+        ncol=min(4, max(1, len(leyenda))),
+        frameon=False,
+    )
+    fig.tight_layout(rect=(0, 0.10, 1, 0.95))
+    if ruta_salida is not None:
+        ruta_salida = Path(ruta_salida)
+        ruta_salida.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(ruta_salida, dpi=dpi, bbox_inches="tight")
+    return fig, ejes, mapa, comparacion
+
+
+def _preparar_dominantes_animacion(
+    agricultura: pd.DataFrame,
+    top_n: int,
+    por_ciclo: bool,
+) -> tuple[pd.DataFrame, list[int], list[str], dict]:
+    """Precalcula cultivos dominantes y una paleta estable para los GIF."""
+    requeridas = {
+        "cvegeo", "Anio", "Nomcultivo", "Nomcicloproductivo", "Cosechada",
+    }
+    faltantes = requeridas - set(agricultura.columns)
+    if faltantes:
+        raise KeyError(f"Faltan columnas para la animacion: {sorted(faltantes)}")
+    if top_n < 1:
+        raise ValueError("top_n debe ser mayor que cero.")
+    datos = agricultura[list(requeridas)].copy()
+    datos["cvegeo"] = datos["cvegeo"].astype("string").str.zfill(5)
+    datos["Anio"] = pd.to_numeric(datos["Anio"], errors="coerce")
+    datos["Cosechada"] = pd.to_numeric(
+        datos["Cosechada"], errors="coerce"
+    ).fillna(0)
+    datos = datos.loc[datos["Anio"].notna() & datos["Cosechada"].gt(0)].copy()
+    datos["Anio"] = datos["Anio"].astype(int)
+    cultivos = (
+        datos.groupby("Nomcultivo", observed=True)["Cosechada"]
+        .sum().nlargest(top_n).index.tolist()
+    )
+    claves = ["Anio", "cvegeo", "Nomcultivo"]
+    if por_ciclo:
+        claves.insert(2, "Nomcicloproductivo")
+    resumen = (
+        datos.groupby(claves, as_index=False, observed=True)["Cosechada"].sum()
+    )
+    orden = ["Anio"]
+    if por_ciclo:
+        orden.append("Nomcicloproductivo")
+    orden += ["cvegeo", "Cosechada", "Nomcultivo"]
+    ascendentes = [True] * (len(orden) - 2) + [False, True]
+    dominantes = resumen.sort_values(orden, ascending=ascendentes)
+    duplicados = ["Anio", "cvegeo"]
+    if por_ciclo:
+        duplicados.insert(1, "Nomcicloproductivo")
+    dominantes = dominantes.drop_duplicates(duplicados)
+    dominantes["categoria_cultivo"] = dominantes["Nomcultivo"].where(
+        dominantes["Nomcultivo"].isin(cultivos), "Otros"
+    )
+    anios = sorted(dominantes["Anio"].unique().tolist())
+    paleta = _paleta_cultivos(cultivos)
+    return dominantes, anios, cultivos, paleta
+
+
+def crear_animacion_cultivos_anual(
+    agricultura: pd.DataFrame,
+    municipios: gpd.GeoDataFrame,
+    ruta_salida: str | Path = FIGURES_DIR / "cultivos_anual_2003_2025.gif",
+    top_n: int = 12,
+    fps: int = 2,
+    dpi: int = 105,
+) -> Path:
+    """Genera un GIF anual del cultivo predominante por municipio."""
+    geometrias = preparar_geometrias_municipales(municipios)
+    dominantes, anios, cultivos, paleta = _preparar_dominantes_animacion(
+        agricultura, top_n=top_n, por_ciclo=False
+    )
+    fig, ax = plt.subplots(figsize=(13, 9))
+    leyenda = [Patch(facecolor=paleta[c], label=c) for c in cultivos]
+    leyenda += [
+        Patch(facecolor=paleta["Otros"], label="Otros"),
+        Patch(facecolor="#eeeeee", label="Sin cosecha registrada"),
+    ]
+
+    def actualizar(anio):
+        ax.clear()
+        seleccion = dominantes.loc[
+            dominantes["Anio"].eq(anio), ["cvegeo", "categoria_cultivo"]
+        ]
+        mapa = geometrias.merge(
+            seleccion, on="cvegeo", how="left", validate="one_to_one"
+        )
+        colores = mapa["categoria_cultivo"].map(paleta).fillna("#eeeeee")
+        mapa.plot(ax=ax, color=colores, edgecolor="white", linewidth=0.05)
+        ax.set_axis_off()
+        ax.set_title(f"Cultivo predominante por municipio · {anio}", fontsize=17)
+        return [ax]
+
+    animacion = FuncAnimation(
+        fig, actualizar, frames=anios, repeat=True, cache_frame_data=False
+    )
+    fig.legend(
+        handles=leyenda, title="Mayor superficie cosechada",
+        loc="lower center", bbox_to_anchor=(0.5, 0.01), ncol=4,
+        frameon=False, fontsize=8,
+    )
+    fig.tight_layout(rect=(0, 0.13, 1, 1))
+    ruta_salida = Path(ruta_salida)
+    ruta_salida.parent.mkdir(parents=True, exist_ok=True)
+    animacion.save(ruta_salida, writer=PillowWriter(fps=fps), dpi=dpi)
+    plt.close(fig)
+    return ruta_salida
+
+
+def crear_animacion_cultivos_por_ciclo(
+    agricultura: pd.DataFrame,
+    municipios: gpd.GeoDataFrame,
+    ruta_salida: str | Path = FIGURES_DIR / "cultivos_ciclos_2003_2025.gif",
+    ciclos: tuple[str, ...] = (
+        "Otoño-Invierno", "Primavera-Verano", "Perennes",
+    ),
+    top_n: int = 12,
+    fps: int = 2,
+    dpi: int = 100,
+) -> Path:
+    """Genera un GIF anual comparando los tres ciclos productivos."""
+    geometrias = preparar_geometrias_municipales(municipios)
+    dominantes, anios, cultivos, paleta = _preparar_dominantes_animacion(
+        agricultura, top_n=top_n, por_ciclo=True
+    )
+    fig, ejes = plt.subplots(1, len(ciclos), figsize=(19, 7))
+    ejes = np.atleast_1d(ejes)
+    leyenda = [Patch(facecolor=paleta[c], label=c) for c in cultivos]
+    leyenda += [
+        Patch(facecolor=paleta["Otros"], label="Otros"),
+        Patch(facecolor="#eeeeee", label="Sin cosecha registrada"),
+    ]
+
+    def actualizar(anio):
+        for eje, ciclo in zip(ejes, ciclos):
+            eje.clear()
+            seleccion = dominantes.loc[
+                dominantes["Anio"].eq(anio)
+                & dominantes["Nomcicloproductivo"].eq(ciclo),
+                ["cvegeo", "categoria_cultivo"],
+            ]
+            mapa = geometrias.merge(
+                seleccion, on="cvegeo", how="left", validate="one_to_one"
+            )
+            colores = mapa["categoria_cultivo"].map(paleta).fillna("#eeeeee")
+            mapa.plot(ax=eje, color=colores, edgecolor="white", linewidth=0.04)
+            eje.set_axis_off()
+            eje.set_title(ciclo, fontsize=13)
+        fig.suptitle(f"Cultivo predominante por ciclo productivo · {anio}", fontsize=17)
+        return list(ejes)
+
+    animacion = FuncAnimation(
+        fig, actualizar, frames=anios, repeat=True, cache_frame_data=False
+    )
+    fig.legend(
+        handles=leyenda, title="Mayor superficie cosechada",
+        loc="lower center", bbox_to_anchor=(0.5, -0.01), ncol=5,
+        frameon=False, fontsize=8,
+    )
+    fig.tight_layout(rect=(0, 0.16, 1, 0.94))
+    ruta_salida = Path(ruta_salida)
+    ruta_salida.parent.mkdir(parents=True, exist_ok=True)
+    animacion.save(ruta_salida, writer=PillowWriter(fps=fps), dpi=dpi)
+    plt.close(fig)
+    return ruta_salida
+
+
+def crear_mapa_redistribucion_por_ciclo(
+    escenarios: pd.DataFrame,
+    municipios: gpd.GeoDataFrame,
+    escenario: str = "intermedio",
+    ciclos: tuple[str, ...] = (
+        "Otoño-Invierno", "Primavera-Verano", "Perennes",
+    ),
+    ruta_salida: str | Path | None = (
+        FIGURES_DIR / "redistribucion_cultivos_por_ciclo_intermedio.png"
+    ),
+    figsize: tuple[int, int] = (20, 12),
+    dpi: int = 160,
+):
+    """Compara cultivos dominantes originales y redistribuidos por ciclo."""
+    columna_nueva = f"superficie_{escenario}_ha"
+    requeridas = {
+        "cvegeo", "Nomcultivo", "Nomcicloproductivo",
+        "superficie_base_ha", columna_nueva,
+    }
+    faltantes = requeridas - set(escenarios.columns)
+    if faltantes:
+        raise KeyError(f"Faltan columnas para el mapa por ciclo: {sorted(faltantes)}")
+    geometrias = preparar_geometrias_municipales(municipios)
+    cultivos = sorted(escenarios["Nomcultivo"].dropna().unique().tolist())
+    paleta = _paleta_cultivos(cultivos)
+    fig, ejes = plt.subplots(2, len(ciclos), figsize=figsize)
+    comparaciones = []
+
+    for columna, ciclo in enumerate(ciclos):
+        datos_ciclo = escenarios.loc[
+            escenarios["Nomcicloproductivo"].eq(ciclo)
+        ].copy()
+        original = _cultivo_dominante_por_superficie(
+            datos_ciclo, "superficie_base_ha"
+        ).rename(columns={"cultivo_dominante": "cultivo_original"})
+        nueva = _cultivo_dominante_por_superficie(
+            datos_ciclo, columna_nueva
+        ).rename(columns={"cultivo_dominante": "cultivo_nuevo"})
+        comparacion = original[["cvegeo", "cultivo_original"]].merge(
+            nueva[["cvegeo", "cultivo_nuevo"]],
+            on="cvegeo", how="outer", validate="one_to_one",
+        )
+        comparacion["Nomcicloproductivo"] = ciclo
+        comparacion["cambio_dominante"] = (
+            comparacion["cultivo_original"].notna()
+            & comparacion["cultivo_nuevo"].notna()
+            & comparacion["cultivo_original"].ne(comparacion["cultivo_nuevo"])
+        )
+        comparaciones.append(comparacion)
+        mapa = geometrias.merge(
+            comparacion, on="cvegeo", how="left", validate="one_to_one"
+        )
+        for fila, (campo, etiqueta) in enumerate((
+            ("cultivo_original", "Original 2025"),
+            ("cultivo_nuevo", f"Escenario {escenario}"),
+        )):
+            colores = mapa[campo].map(paleta).fillna("#eeeeee")
+            mapa.plot(
+                ax=ejes[fila, columna], color=colores,
+                edgecolor="white", linewidth=0.04,
+            )
+            ejes[fila, columna].set_axis_off()
+            cambios = int(comparacion["cambio_dominante"].sum())
+            subtitulo = f"{etiqueta} · {cambios:,} cambios" if fila else etiqueta
+            ejes[fila, columna].set_title(
+                f"{ciclo}\n{subtitulo}", fontsize=13
+            )
+
+    leyenda = [Patch(facecolor=paleta[c], label=c) for c in cultivos]
+    leyenda.append(Patch(facecolor="#eeeeee", label="Sin superficie elegible"))
+    fig.suptitle(
+        "Cultivo dominante antes y después de la redistribución por ciclo",
+        fontsize=18,
+    )
+    fig.legend(
+        handles=leyenda, title="Cultivo dominante", loc="lower center",
+        bbox_to_anchor=(0.5, -0.01), ncol=5, frameon=False, fontsize=8,
+    )
+    fig.tight_layout(rect=(0, 0.13, 1, 0.95))
+    if ruta_salida is not None:
+        ruta_salida = Path(ruta_salida)
+        ruta_salida.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(ruta_salida, dpi=dpi, bbox_inches="tight")
+    return fig, ejes, pd.concat(comparaciones, ignore_index=True)
+
+
+def crear_series_productivas_principales(
+    agricultura: pd.DataFrame,
+    top_n: int = 6,
+    unidad: str = "Tonelada",
+    ruta_salida: str | Path | None = None,
+):
+    """Grafica superficie, produccion y rendimiento de cultivos principales."""
+    requeridas = {
+        "Anio", "Nomcultivo", "Nomunidad", "Cosechada", "Volumenproduccion",
+    }
+    faltantes = requeridas - set(agricultura.columns)
+    if faltantes:
+        raise KeyError(f"Faltan columnas productivas: {sorted(faltantes)}")
+    datos = agricultura.loc[agricultura["Nomunidad"].eq(unidad), list(requeridas)].copy()
+    for columna in ["Cosechada", "Volumenproduccion"]:
+        datos[columna] = pd.to_numeric(datos[columna], errors="coerce").fillna(0)
+    cultivos = (
+        datos.groupby("Nomcultivo", observed=True)["Cosechada"]
+        .sum().nlargest(top_n).index.tolist()
+    )
+    serie = (
+        datos.loc[datos["Nomcultivo"].isin(cultivos)]
+        .groupby(["Anio", "Nomcultivo"], as_index=False, observed=True)
+        .agg(Cosechada=("Cosechada", "sum"), Volumenproduccion=("Volumenproduccion", "sum"))
+    )
+    serie["Rendimiento"] = serie["Volumenproduccion"] / serie["Cosechada"]
+    paleta = _paleta_cultivos(cultivos)
+    fig, ejes = plt.subplots(3, 1, figsize=(14, 13), sharex=True)
+    configuraciones = [
+        ("Cosechada", "Superficie cosechada", "hectareas"),
+        ("Volumenproduccion", "Volumen de produccion", "toneladas"),
+        ("Rendimiento", "Rendimiento ponderado", "toneladas por hectarea"),
+    ]
+    for eje, (columna, titulo, unidad_eje) in zip(ejes, configuraciones):
+        for cultivo in cultivos:
+            bloque = serie.loc[serie["Nomcultivo"].eq(cultivo)]
+            eje.plot(bloque["Anio"], bloque[columna], color=paleta[cultivo], linewidth=2, label=cultivo)
+        eje.set_title(titulo, loc="left", fontsize=13)
+        eje.set_ylabel(unidad_eje)
+        eje.grid(alpha=0.2)
+    ejes[-1].set_xlabel("Año")
+    fig.legend(loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, 0))
+    fig.suptitle("Trayectoria de los principales cultivos medidos en toneladas", fontsize=17)
+    fig.tight_layout(rect=(0, 0.06, 1, 0.96))
+    if ruta_salida is not None:
+        ruta_salida = Path(ruta_salida); ruta_salida.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(ruta_salida, dpi=170, bbox_inches="tight")
+    return fig, ejes, serie
+
+
+def crear_mapa_estabilidad_rendimiento(
+    agricultura: pd.DataFrame,
+    municipios: gpd.GeoDataFrame,
+    cultivo: str = "Maíz grano",
+    unidad: str = "Tonelada",
+    minimo_anios: int = 10,
+    ruta_salida: str | Path | None = None,
+):
+    """Mapea el coeficiente de variacion anual del rendimiento municipal."""
+    tiene_historial = {
+        "rendimiento_hist_anios", "rendimiento_hist_media",
+        "rendimiento_hist_desviacion", "rendimiento_hist_cv",
+    }.issubset(agricultura.columns)
+    if tiene_historial:
+        columnas = [
+            "cvegeo", "Anio", "Nomcicloproductivo", "Nommodalidad",
+            "rendimiento_hist_anios", "rendimiento_hist_media",
+            "rendimiento_hist_desviacion", "rendimiento_hist_cv",
+        ]
+        datos = agricultura.loc[
+            agricultura["Nomcultivo"].eq(cultivo)
+            & agricultura["Nomunidad"].eq(unidad), columnas,
+        ].copy()
+        datos["cvegeo"] = datos["cvegeo"].astype("string").str.zfill(5)
+        datos = (
+            datos.sort_values("Anio")
+            .drop_duplicates(
+                ["cvegeo", "Nomcicloproductivo", "Nommodalidad"], keep="last"
+            )
+        )
+        estabilidad = datos.groupby("cvegeo", as_index=False, observed=True).agg(
+            anios=("rendimiento_hist_anios", "max"),
+            rendimiento_medio=("rendimiento_hist_media", "median"),
+            rendimiento_desviacion=("rendimiento_hist_desviacion", "median"),
+            coeficiente_variacion=("rendimiento_hist_cv", "median"),
+        )
+        estabilidad = estabilidad.loc[
+            estabilidad["anios"].ge(minimo_anios)
+            & estabilidad["coeficiente_variacion"].notna()
+        ].copy()
+    else:
+        datos = agricultura.loc[
+            agricultura["Nomcultivo"].eq(cultivo)
+            & agricultura["Nomunidad"].eq(unidad),
+            ["cvegeo", "Anio", "Cosechada", "Volumenproduccion"],
+        ].copy()
+        datos["cvegeo"] = datos["cvegeo"].astype("string").str.zfill(5)
+        datos[["Cosechada", "Volumenproduccion"]] = datos[["Cosechada", "Volumenproduccion"]].apply(pd.to_numeric, errors="coerce")
+        anual = datos.groupby(["cvegeo", "Anio"], as_index=False).agg(
+            Cosechada=("Cosechada", "sum"), Volumenproduccion=("Volumenproduccion", "sum")
+        )
+        anual = anual.loc[anual["Cosechada"].gt(0)]
+        anual["Rendimiento"] = anual["Volumenproduccion"] / anual["Cosechada"]
+        estabilidad = anual.groupby("cvegeo", as_index=False).agg(
+            anios=("Anio", "nunique"), rendimiento_medio=("Rendimiento", "mean"),
+            rendimiento_desviacion=("Rendimiento", "std"),
+        )
+        estabilidad = estabilidad.loc[estabilidad["anios"].ge(minimo_anios)].copy()
+        estabilidad["coeficiente_variacion"] = estabilidad["rendimiento_desviacion"] / estabilidad["rendimiento_medio"]
+    mapa = preparar_geometrias_municipales(municipios).merge(estabilidad, on="cvegeo", how="left", validate="one_to_one")
+    limite = estabilidad["coeficiente_variacion"].quantile(0.95)
+    fig, ax = plt.subplots(figsize=(13, 9))
+    mapa.plot(
+        ax=ax, column="coeficiente_variacion", cmap="RdYlGn_r", vmin=0, vmax=limite,
+        legend=True, missing_kwds={"color": "#eeeeee", "label": "Historia insuficiente"},
+        edgecolor="white", linewidth=0.04,
+        legend_kwds={"label": "Coeficiente de variacion (menor = mas estable)", "shrink": 0.7},
+    )
+    ax.set_axis_off(); ax.set_title(f"Estabilidad municipal del rendimiento · {cultivo}\nMinimo {minimo_anios} años", fontsize=16)
+    fig.tight_layout()
+    if ruta_salida is not None:
+        ruta_salida = Path(ruta_salida); ruta_salida.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(ruta_salida, dpi=170, bbox_inches="tight")
+    return fig, ax, mapa
+
+
+def crear_siniestros_anomalias_clima(
+    agricultura: pd.DataFrame,
+    ruta_salida: str | Path | None = None,
+):
+    """Relaciona superficie siniestrada nacional con anomalias climaticas."""
+    meses = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
+    temp = [f"temperatura_{mes}_c" for mes in meses]
+    lluvia = [f"precipitacion_{mes}_mm" for mes in meses]
+    basicas = {"cvegeo", "Anio", "Siniestrada"}
+    faltantes_basicas = basicas - set(agricultura.columns)
+    if faltantes_basicas:
+        raise KeyError(f"Faltan columnas para anomalias: {sorted(faltantes_basicas)}")
+
+    if set(temp + lluvia).issubset(agricultura.columns):
+        clima = agricultura[["cvegeo", "Anio", *temp, *lluvia]].drop_duplicates(
+            ["cvegeo", "Anio"]
+        ).copy()
+        clima[temp + lluvia] = clima[temp + lluvia].apply(
+            pd.to_numeric, errors="coerce"
+        )
+        clima["temperatura_referencia_c"] = clima[temp].mean(axis=1)
+        clima["precipitacion_referencia_mm"] = clima[lluvia].sum(
+            axis=1, min_count=10
+        )
+        grupos_clima = ["cvegeo"]
+    else:
+        columnas_ciclo = {
+            "Nomcicloproductivo", "temperatura_media_ciclo_c",
+            "precipitacion_ciclo_mm",
+        }
+        faltantes_ciclo = columnas_ciclo - set(agricultura.columns)
+        if faltantes_ciclo:
+            raise KeyError(
+                "Se requieren columnas mensuales o clima por ciclo; faltan: "
+                f"{sorted(faltantes_ciclo)}"
+            )
+        clima = agricultura[[
+            "cvegeo", "Anio", "Nomcicloproductivo",
+            "temperatura_media_ciclo_c", "precipitacion_ciclo_mm",
+        ]].drop_duplicates(
+            ["cvegeo", "Anio", "Nomcicloproductivo"]
+        ).copy()
+        clima["temperatura_referencia_c"] = pd.to_numeric(
+            clima["temperatura_media_ciclo_c"], errors="coerce"
+        )
+        clima["precipitacion_referencia_mm"] = pd.to_numeric(
+            clima["precipitacion_ciclo_mm"], errors="coerce"
+        )
+        grupos_clima = ["cvegeo", "Nomcicloproductivo"]
+
+    clima["anomalia_temperatura_c"] = (
+        clima["temperatura_referencia_c"]
+        - clima.groupby(grupos_clima, observed=True)["temperatura_referencia_c"]
+        .transform("mean")
+    )
+    clima["anomalia_precipitacion_mm"] = (
+        clima["precipitacion_referencia_mm"]
+        - clima.groupby(grupos_clima, observed=True)["precipitacion_referencia_mm"]
+        .transform("mean")
+    )
+    clima_anual = clima.groupby("Anio", as_index=False).agg(
+        anomalia_temperatura_c=("anomalia_temperatura_c", "mean"),
+        anomalia_precipitacion_mm=("anomalia_precipitacion_mm", "mean"),
+    )
+    siniestros = agricultura.assign(
+        Siniestrada=pd.to_numeric(agricultura["Siniestrada"], errors="coerce")
+    ).groupby("Anio", as_index=False)["Siniestrada"].sum()
+    resumen = clima_anual.merge(siniestros, on="Anio", validate="one_to_one")
+    fig, ejes = plt.subplots(1, 2, figsize=(14, 5.5))
+    for eje, columna, etiqueta, color in (
+        (ejes[0], "anomalia_precipitacion_mm", "Anomalia de precipitacion (mm)", "#3c78a8"),
+        (ejes[1], "anomalia_temperatura_c", "Anomalia de temperatura (°C)", "#d46a4c"),
+    ):
+        eje.scatter(resumen[columna], resumen["Siniestrada"], s=55, color=color, alpha=0.8)
+        for _, fila in resumen.nlargest(3, "Siniestrada").iterrows():
+            eje.annotate(int(fila["Anio"]), (fila[columna], fila["Siniestrada"]), xytext=(4, 4), textcoords="offset points", fontsize=8)
+        eje.set_xlabel(etiqueta); eje.set_ylabel("Superficie siniestrada (ha)"); eje.grid(alpha=0.2)
+    fig.suptitle("Superficie siniestrada y anomalias climaticas nacionales", fontsize=16)
+    fig.tight_layout()
+    if ruta_salida is not None:
+        ruta_salida = Path(ruta_salida); ruta_salida.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(ruta_salida, dpi=170, bbox_inches="tight")
+    return fig, ejes, resumen
+
+
+def crear_cobertura_anual_datos(
+    agricultura: pd.DataFrame,
+    ruta_salida: str | Path | None = None,
+):
+    """Grafica cambios anuales en registros, municipios y cultivos."""
+    resumen = agricultura.groupby("Anio", as_index=False).agg(
+        registros=("cvegeo", "size"), municipios=("cvegeo", "nunique"),
+        cultivos=("Nomcultivo", "nunique"),
+    )
+    fig, ejes = plt.subplots(3, 1, figsize=(13, 10), sharex=True)
+    for eje, columna, titulo, color in (
+        (ejes[0], "registros", "Registros", "#285947"),
+        (ejes[1], "municipios", "Municipios", "#d98d69"),
+        (ejes[2], "cultivos", "Cultivos distintos", "#3c78a8"),
+    ):
+        eje.plot(resumen["Anio"], resumen[columna], marker="o", color=color, linewidth=2)
+        eje.axvspan(2019.5, 2021.5, color="#f4c453", alpha=0.25)
+        eje.set_ylabel(titulo); eje.grid(alpha=0.2)
+    ejes[-1].set_xlabel("Año")
+    fig.suptitle("Cobertura anual del dataset · 2020–2021 requieren cautela", fontsize=16)
+    fig.tight_layout()
+    if ruta_salida is not None:
+        ruta_salida = Path(ruta_salida); ruta_salida.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(ruta_salida, dpi=170, bbox_inches="tight")
+    return fig, ejes, resumen
+
+
+def crear_selector_mapa_estabilidad(
+    agricultura: pd.DataFrame,
+    municipios: gpd.GeoDataFrame,
+    unidad: str = "Tonelada",
+    minimo_anios: int = 10,
+):
+    """Crea un selector Jupyter para explorar estabilidad por cultivo."""
+    try:
+        import ipywidgets as widgets
+        from IPython.display import display
+    except ImportError as error:
+        raise ImportError(
+            "El selector requiere ipywidgets. Ejecuta `uv sync` y reinicia el kernel."
+        ) from error
+
+    requeridas = {
+        "Nomcultivo", "Nomunidad", "rendimiento_hist_anios",
+        "rendimiento_hist_cv",
+    }
+    faltantes = requeridas - set(agricultura.columns)
+    if faltantes:
+        raise KeyError(
+            "El selector requiere el dataset histórico; faltan: "
+            f"{sorted(faltantes)}"
+        )
+    elegibles = agricultura.loc[
+        agricultura["Nomunidad"].eq(unidad)
+        & agricultura["rendimiento_hist_anios"].ge(minimo_anios)
+        & agricultura["rendimiento_hist_cv"].notna()
+    ]
+    cobertura = (
+        elegibles.groupby("Nomcultivo", observed=True)["cvegeo"]
+        .nunique().sort_values(ascending=False)
+    )
+    if cobertura.empty:
+        raise ValueError("No hay cultivos con historial suficiente para el selector.")
+    opciones = [
+        (f"{cultivo} · {municipios_n:,} municipios", cultivo)
+        for cultivo, municipios_n in cobertura.items()
+    ]
+    selector = widgets.Dropdown(
+        options=opciones,
+        value=opciones[0][1],
+        description="Cultivo:",
+        layout=widgets.Layout(width="520px"),
+        style={"description_width": "70px"},
+    )
+    salida = widgets.Output()
+
+    def actualizar(*_):
+        with salida:
+            salida.clear_output(wait=True)
+            figura, _, mapa = crear_mapa_estabilidad_rendimiento(
+                agricultura,
+                municipios,
+                cultivo=selector.value,
+                unidad=unidad,
+                minimo_anios=minimo_anios,
+                ruta_salida=None,
+            )
+            display(figura)
+            plt.close(figura)
+            disponibles = int(mapa["coeficiente_variacion"].notna().sum())
+            print(
+                f"{selector.value}: {disponibles:,} municipios con "
+                f"al menos {minimo_anios} años de historial."
+            )
+
+    selector.observe(actualizar, names="value")
+    actualizar()
+    return widgets.VBox([
+        widgets.HTML(
+            "<b>Estabilidad histórica municipal</b><br>"
+            "Verde = menor variabilidad; rojo = mayor variabilidad."
+        ),
+        selector,
+        salida,
+    ])
+

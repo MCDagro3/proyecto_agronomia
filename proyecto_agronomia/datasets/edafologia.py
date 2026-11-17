@@ -11,12 +11,16 @@ from proyecto_agronomia.config import (
     EDAFOLOGIA_URL,
 )
 
-from proyecto_agronomia.config import (
-    EDAFOLOGIA_RAW_DIR,
-    EDAFOLOGIA_URL,
-    EDAFOLOGIA_DICCIONARIO_PATH,
-    EDAFOLOGIA_DICCIONARIO_URL,
-)
+GRUPOS_SUELO_WRB = {
+    "AC": "Acrisol", "AL": "Alisol", "AN": "Andosol", "AT": "Anthrosol",
+    "AR": "Arenosol", "CL": "Calcisol", "CM": "Cambisol", "CH": "Chernozem",
+    "CR": "Cryosol", "DU": "Durisol", "FR": "Ferralsol", "FL": "Fluvisol",
+    "GL": "Gleysol", "GY": "Gypsisol", "HS": "Histosol", "KS": "Kastanozem",
+    "LP": "Leptosol", "LX": "Lixisol", "LV": "Luvisol", "NT": "Nitisol",
+    "PH": "Phaeozem", "PL": "Planosol", "PT": "Plinthosol", "PZ": "Podzol",
+    "RG": "Regosol", "RT": "Retisol", "SC": "Solonchak", "SN": "Solonetz",
+    "ST": "Stagnosol", "TC": "Technosol", "UM": "Umbrisol", "VR": "Vertisol",
+}
 
 def descargar_edafologia_inegi(
     directorio: Path = EDAFOLOGIA_RAW_DIR,

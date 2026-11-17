@@ -30,12 +30,18 @@ FIGURES_DIR = REPORTS_DIR / "figures"
 # ---------------------------------------------------------------------
 
 AGRICULTURA_RAW_DIR = RAW_DATA_DIR / "agricultura"
-DGSIAP_DIR = PROJ_ROOT / 'data_david/process/DGSIAP'
+AGRICULTURA_INTERIM_DIR = INTERIM_DATA_DIR / "agricultura"
+AGRICULTURA_PROCESSED_DIR = PROCESSED_DATA_DIR / "agricultura"
+DGSIAP_AVANCE_RAW_DIR = AGRICULTURA_RAW_DIR / "avance"
+DGSIAP_AGROPROGRAMA_RAW_DIR = AGRICULTURA_RAW_DIR / "agroprograma"
 CLIMA_RAW_DIR = RAW_DATA_DIR / "clima"
 REFERENCES_DIR = PROJ_ROOT / "references"
-CONAGUA_RAW_DIR = CLIMA_RAW_DIR / "conagua"
 
+INEGI_RAW_DIR = RAW_DATA_DIR / "inegi"
 INEGI_INTERIM_DIR = INTERIM_DATA_DIR / "inegi"
+INEGI_USV_RAW_DIR = INEGI_RAW_DIR / "uso_suelo_vegetacion"
+MAPBIOMAS_RAW_DIR = RAW_DATA_DIR / "mapbiomas"
+MAPBIOMAS_PROCESSED_DIR = PROCESSED_DATA_DIR / "mapbiomas"
 EDAFOLOGIA_RAW_DIR = RAW_DATA_DIR / "edafologia"
 EDAFOLOGIA_REFERENCES_DIR = REFERENCES_DIR / "edafologia"
 # ---------------------------------------------------------------------
@@ -66,6 +72,13 @@ AGRICULTURA_DICCIONARIO_PATH = (
     / "diccionario_datos_agricultura_dgsiap.xlsx"
 )
 
+DGSIAP_DATOS_ABIERTOS_URL = (
+    "https://nube.agricultura.gob.mx/datosAbiertos/Agricola.php"
+)
+DGSIAP_DESCARGA_BASE_URL = "https://nube.agricultura.gob.mx/index.php"
+DGSIAP_AVANCE_URL = "https://nube.agricultura.gob.mx/avance_agricola/"
+DGSIAP_AGROPROGRAMA_URL = "https://nube.agricultura.gob.mx/agroprograma/"
+
 INEGI_MUNICIPIOS_URL_TEMPLATE = (
     "https://gaia.inegi.org.mx/"
     "wscatgeo/v2/geo/mgem/{clave_estado}"
@@ -74,6 +87,11 @@ INEGI_MUNICIPIOS_URL_TEMPLATE = (
 INEGI_ESTADOS_URL_TEMPLATE = (
     "https://gaia.inegi.org.mx/"
     "wscatgeo/v2/geo/mgee/{clave_estado}"
+)
+
+INEGI_MAPAS_HOST = "https://www.inegi.org.mx"
+INEGI_MAPAS_API_URL = (
+    f"{INEGI_MAPAS_HOST}/app/api/productos/interna_v2/mapas"
 )
 
 EDAFOLOGIA_URL = (
@@ -92,30 +110,6 @@ EDAFOLOGIA_DICCIONARIO_URL = (
 EDAFOLOGIA_DICCIONARIO_PATH = (
     EDAFOLOGIA_REFERENCES_DIR
     / "diccionario_datos_edafologicos_250k_v4.pdf"
-)
-
-CONAGUA_KMZ_PATH = (
-    CONAGUA_RAW_DIR / "EstacionesClimatologicas.kmz"
-)
-CONAGUA_KMZ_URL = (
-    "https://smn.conagua.gob.mx/tools/GUI/estaciones-climatologicas/data/EstacionesClimatologicas.kmz"
-)
-CONAGUA_INTERIM_DIR = (
-    INTERIM_DATA_DIR / "clima" / "conagua"
-)
-
-CONAGUA_PROCESSED_DIR = (
-    PROCESSED_DATA_DIR / "clima" / "conagua"
-)
-
-CONAGUA_ANIO_INICIAL = 1981
-CONAGUA_ANIO_FINAL = 2025
-
-CONAGUA_DISTANCIA_MIN_KM = 50
-
-CONAGUA_MEXICO_GEOJSON_URL = (
-    "https://www.geoboundaries.org/api/current/"
-    "gbOpen/MEX/ADM0/"
 )
 
 # ============================================================

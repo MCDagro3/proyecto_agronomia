@@ -29,6 +29,14 @@ COLUMNAS_NUMERICAS = [
 ]
 
 
+def normalizar_nombre_cultivo(serie: pd.Series) -> pd.Series:
+    """Retira unidades entre paréntesis y normaliza espacios del cultivo."""
+    resultado = serie.astype("string").str.strip()
+    resultado = resultado.str.replace(r"\s*\([^)]*\)\s*$", "", regex=True)
+    resultado = resultado.str.replace(r"\s+", " ", regex=True).str.strip()
+    return resultado.replace("", pd.NA)
+
+
 def normalizar_columnas_agricolas(df: pd.DataFrame, anio: int) -> pd.DataFrame:
     """
     Homogeneiza los cambios de nombres de columnas presentes en los
@@ -42,21 +50,36 @@ def normalizar_columnas_agricolas(df: pd.DataFrame, anio: int) -> pd.DataFrame:
 
     df = df.copy()
 
-    # 2015-2020
+    # 2015-2020: la columna sin unidad es preferible cuando contiene valor.
     if "Nomcultivo Sin Um" in df.columns:
-        df = df.rename(
-            columns={
-                "Nomcultivo Sin Um": "Nomcultivo",
-            }
-        )
+        cultivo_sin_unidad = normalizar_nombre_cultivo(df["Nomcultivo Sin Um"])
+        if "Nomcultivo" in df.columns:
+            cultivo_original = normalizar_nombre_cultivo(df["Nomcultivo"])
+            df["Nomcultivo"] = cultivo_sin_unidad.combine_first(cultivo_original)
+            df = df.drop(columns="Nomcultivo Sin Um")
+        else:
+            df = df.rename(columns={"Nomcultivo Sin Um": "Nomcultivo"})
 
-    # 2003-2020
+    if "Nomcultivo" in df.columns:
+        df["Nomcultivo"] = normalizar_nombre_cultivo(df["Nomcultivo"])
+
+    # 2003-2020: combinar en vez de crear columnas duplicadas.
     if "Precio" in df.columns:
-        df = df.rename(
-            columns={
-                "Precio": "Preciomediorural",
-            }
+        precio = pd.to_numeric(
+            df["Precio"].astype("string").str.replace(",", "", regex=False),
+            errors="coerce",
         )
+        if "Preciomediorural" in df.columns:
+            precio_medio = pd.to_numeric(
+                df["Preciomediorural"]
+                .astype("string")
+                .str.replace(",", "", regex=False),
+                errors="coerce",
+            )
+            df["Preciomediorural"] = precio_medio.combine_first(precio)
+            df = df.drop(columns="Precio")
+        else:
+            df = df.rename(columns={"Precio": "Preciomediorural"})
 
     logger.debug(f"[{anio}] Columnas normalizadas.")
 
@@ -87,6 +110,15 @@ def convertir_columnas_numericas(
             df[columna]
             .astype(str)
             .str.replace(",", "", regex=False)
+            .replace(
+                {
+                    "#¡NUM!": pd.NA,
+                    "#Â¡NUM!": pd.NA,
+                    "nan": pd.NA,
+                    "None": pd.NA,
+                    "": pd.NA,
+                }
+            )
         )
 
         df[columna] = pd.to_numeric(
@@ -135,6 +167,7 @@ def construir_historico_agricola(
 
         try:
             df_anio = cargar_archivo_agricola(ruta, anio)
+            df_anio["Anio"] = anio
 
         except Exception as error:
             logger.error(
