@@ -10,6 +10,7 @@ from matplotlib.colors import Normalize
 from matplotlib.patches import Patch
 import numpy as np
 import pandas as pd
+from scipy.stats import chi2_contingency
 
 from proyecto_agronomia.config import FIGURES_DIR
 from proyecto_agronomia.datasets.edafologia import GRUPOS_SUELO_WRB
@@ -134,6 +135,338 @@ def crear_heatmap_participacion(
     barra.set_label(etiqueta_color)
     fig.tight_layout()
     return fig, ax
+
+
+def crear_matriz_correlacion_agricola(
+    agricultura: pd.DataFrame,
+    columnas: list[str] | None = None,
+    metodo: str = "spearman",
+    minimo_observaciones: int = 100,
+    ruta_salida: str | Path | None = None,
+):
+    """Grafica correlaciones productivas, climaticas, edafologicas e historicas.
+
+    Spearman es el metodo predeterminado porque resume asociaciones monotonas y
+    es menos sensible a valores extremos y escalas distintas que Pearson.
+    """
+    columnas = columnas or [
+        "Sembrada", "Cosechada", "Siniestrada", "Volumenproduccion",
+        "Rendimiento", "Preciomediorural", "Valorproduccion",
+        "temperatura_media_ciclo_c", "precipitacion_ciclo_mm",
+        "grupo_suelo_dominante_pct", "grupos_suelo_n",
+        "rendimiento_anio_anterior", "rendimiento_hist_media",
+        "rendimiento_hist_cv",
+    ]
+    disponibles = [columna for columna in columnas if columna in agricultura.columns]
+    if len(disponibles) < 2:
+        raise KeyError("No hay suficientes columnas numericas para correlacionar.")
+    if metodo not in {"pearson", "spearman", "kendall"}:
+        raise ValueError("metodo debe ser 'pearson', 'spearman' o 'kendall'.")
+
+    datos = (
+        agricultura[disponibles]
+        .apply(pd.to_numeric, errors="coerce")
+        .replace([np.inf, -np.inf], np.nan)
+    )
+    cobertura = datos.notna().sum().rename("observaciones").to_frame()
+    correlacion = datos.corr(method=metodo, min_periods=minimo_observaciones)
+    etiquetas = {
+        "Sembrada": "Superficie sembrada",
+        "Cosechada": "Superficie cosechada",
+        "Siniestrada": "Superficie siniestrada",
+        "Volumenproduccion": "Produccion",
+        "Rendimiento": "Rendimiento",
+        "Preciomediorural": "Precio medio rural",
+        "Valorproduccion": "Valor de produccion",
+        "temperatura_media_ciclo_c": "Temperatura del ciclo",
+        "precipitacion_ciclo_mm": "Precipitacion del ciclo",
+        "grupo_suelo_dominante_pct": "Cobertura del suelo dominante",
+        "grupos_suelo_n": "Diversidad de grupos de suelo",
+        "rendimiento_anio_anterior": "Rendimiento previo",
+        "rendimiento_hist_media": "Rendimiento historico",
+        "rendimiento_hist_cv": "Variabilidad historica (CV)",
+    }
+    nombres = [etiquetas.get(columna, columna) for columna in correlacion.columns]
+    mascara = np.triu(np.ones(correlacion.shape, dtype=bool), k=1)
+    valores = np.ma.array(correlacion.to_numpy(), mask=mascara)
+    lado = max(10, len(disponibles) * 0.78)
+    fig, ax = plt.subplots(figsize=(lado, lado * 0.88))
+    imagen = ax.imshow(valores, cmap="RdBu_r", vmin=-1, vmax=1)
+    ax.set_xticks(range(len(nombres)), nombres, rotation=52, ha="right")
+    ax.set_yticks(range(len(nombres)), nombres)
+    ax.set_title(f"Matriz de correlacion agricola · {metodo.capitalize()}", fontsize=16)
+    for fila in range(len(nombres)):
+        for columna in range(fila + 1):
+            valor = correlacion.iloc[fila, columna]
+            texto = "—" if pd.isna(valor) else f"{valor:.2f}"
+            color = "white" if pd.notna(valor) and abs(valor) >= 0.55 else "#17372c"
+            ax.text(columna, fila, texto, ha="center", va="center", fontsize=8, color=color)
+    barra = fig.colorbar(imagen, ax=ax, fraction=0.035, pad=0.025)
+    barra.set_label(f"Correlacion de {metodo.capitalize()} (−1 a 1)")
+    fig.text(
+        0.01, 0.01,
+        "Asociacion no implica causalidad. Produccion, superficie y rendimiento "
+        "comparten definiciones contables.",
+        fontsize=9, color="#6c786f",
+    )
+    fig.tight_layout(rect=(0, 0.035, 1, 1))
+    if ruta_salida is not None:
+        ruta_salida = Path(ruta_salida)
+        ruta_salida.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(ruta_salida, dpi=180, bbox_inches="tight")
+    return fig, ax, correlacion, cobertura
+
+
+def crear_selector_matriz_correlacion(
+    agricultura: pd.DataFrame,
+    unidad: str = "Tonelada",
+    minimo_registros: int = 300,
+    minimo_observaciones_correlacion: int = 100,
+    metodo: str = "spearman",
+):
+    """Crea un selector Jupyter de matrices de correlacion por cultivo."""
+    try:
+        import ipywidgets as widgets
+        from IPython.display import display
+    except ImportError as error:
+        raise ImportError(
+            "El selector requiere ipywidgets. Instala dependencias y reinicia el kernel."
+        ) from error
+
+    requeridas = {"Nomcultivo", "Nomunidad"}
+    faltantes = requeridas - set(agricultura.columns)
+    if faltantes:
+        raise KeyError(f"Faltan columnas para el selector: {sorted(faltantes)}")
+    base = agricultura.loc[agricultura["Nomunidad"].eq(unidad)].copy()
+    cobertura = (
+        base.groupby("Nomcultivo", observed=True)
+        .size().loc[lambda serie: serie.ge(minimo_registros)]
+        .sort_values(ascending=False)
+    )
+    if cobertura.empty:
+        raise ValueError("No hay cultivos con cobertura suficiente para el selector.")
+    opciones = [
+        (f"{cultivo} · {registros:,} registros", cultivo)
+        for cultivo, registros in cobertura.items()
+    ]
+    selector = widgets.Dropdown(
+        options=opciones,
+        value=opciones[0][1],
+        description="Cultivo:",
+        layout=widgets.Layout(width="560px"),
+        style={"description_width": "70px"},
+    )
+    salida = widgets.Output()
+
+    def actualizar(*_):
+        with salida:
+            salida.clear_output(wait=True)
+            cultivo = selector.value
+            datos = base.loc[base["Nomcultivo"].eq(cultivo)]
+            fig, ax, correlacion, cobertura_variables = crear_matriz_correlacion_agricola(
+                datos,
+                metodo=metodo,
+                minimo_observaciones=minimo_observaciones_correlacion,
+            )
+            ax.set_title(
+                f"Matriz de correlacion · {cultivo} · {metodo.capitalize()}",
+                fontsize=16,
+            )
+            plt.show()
+            plt.close(fig)
+            variables_utiles = int(
+                cobertura_variables["observaciones"]
+                .ge(minimo_observaciones_correlacion).sum()
+            )
+            print(
+                f"{cultivo}: {len(datos):,} registros; "
+                f"{variables_utiles} variables con al menos "
+                f"{minimo_observaciones_correlacion:,} observaciones."
+            )
+
+    selector.observe(actualizar, names="value")
+    actualizar()
+    return widgets.VBox([
+        widgets.HTML(
+            "<b>Correlaciones dentro de cada cultivo</b><br>"
+            "La escala de color va de −1 a 1; asociación no implica causalidad."
+        ),
+        selector,
+        salida,
+    ])
+
+
+def _v_cramer(primera: pd.Series, segunda: pd.Series) -> float:
+    """Calcula V de Cramer corregida entre dos variables categoricas."""
+    tabla = pd.crosstab(primera, segunda)
+    if tabla.shape[0] < 2 or tabla.shape[1] < 2:
+        return np.nan
+    chi2 = chi2_contingency(tabla, correction=False)[0]
+    n = tabla.to_numpy().sum()
+    filas, columnas = tabla.shape
+    phi2 = chi2 / n
+    phi2_corregido = max(0, phi2 - ((columnas - 1) * (filas - 1)) / (n - 1))
+    filas_corregidas = filas - ((filas - 1) ** 2) / (n - 1)
+    columnas_corregidas = columnas - ((columnas - 1) ** 2) / (n - 1)
+    denominador = min(columnas_corregidas - 1, filas_corregidas - 1)
+    return np.sqrt(phi2_corregido / denominador) if denominador > 0 else np.nan
+
+
+def _razon_correlacion(categorias: pd.Series, valores: pd.Series) -> float:
+    """Calcula eta para una variable categorica y otra numerica."""
+    codigos, _ = pd.factorize(categorias, sort=False)
+    valores = pd.to_numeric(valores, errors="coerce").to_numpy(dtype=float)
+    media = np.nanmean(valores)
+    denominador = np.nansum((valores - media) ** 2)
+    if denominador <= 0:
+        return np.nan
+    numerador = 0.0
+    for codigo in np.unique(codigos[codigos >= 0]):
+        grupo = valores[codigos == codigo]
+        grupo = grupo[np.isfinite(grupo)]
+        if grupo.size:
+            numerador += grupo.size * (grupo.mean() - media) ** 2
+    return float(np.sqrt(max(0.0, numerador / denominador)))
+
+
+def crear_matriz_asociacion_clima_suelo(
+    agricultura: pd.DataFrame,
+    minimo_observaciones: int = 100,
+    ruta_salida: str | Path | None = None,
+):
+    """Relaciona rendimiento, clima y edafologia sin ordinalizar categorias."""
+    numericas = [
+        "Rendimiento", "temperatura_media_ciclo_c", "precipitacion_ciclo_mm",
+        "grupo_suelo_dominante_pct", "textura_dominante_pct",
+        "fase_fisica_dominante_pct", "fase_quimica_dominante_pct",
+        "grupos_suelo_n", "rendimiento_hist_cv",
+    ]
+    categoricas = [
+        "grupo_suelo_dominante", "textura_dominante",
+        "fase_fisica_dominante", "fase_quimica_dominante",
+        "Nomcicloproductivo", "Nommodalidad",
+    ]
+    numericas = [columna for columna in numericas if columna in agricultura.columns]
+    categoricas = [columna for columna in categoricas if columna in agricultura.columns]
+    columnas = [*numericas, *categoricas]
+    if len(columnas) < 2:
+        raise KeyError("No hay suficientes variables climaticas y edafologicas.")
+    datos = agricultura[columnas].copy()
+    datos[numericas] = datos[numericas].apply(pd.to_numeric, errors="coerce")
+    matriz = pd.DataFrame(np.nan, index=columnas, columns=columnas, dtype=float)
+    cobertura = pd.DataFrame(0, index=columnas, columns=columnas, dtype=int)
+    for indice, primera in enumerate(columnas):
+        for segunda in columnas[: indice + 1]:
+            pareja = datos[[primera, segunda]].dropna()
+            n = len(pareja)
+            cobertura.loc[primera, segunda] = cobertura.loc[segunda, primera] = n
+            if primera == segunda:
+                valor = 1.0 if n >= minimo_observaciones else np.nan
+            elif n < minimo_observaciones:
+                valor = np.nan
+            elif primera in numericas and segunda in numericas:
+                valor = abs(pareja[primera].corr(pareja[segunda], method="spearman"))
+            elif primera in categoricas and segunda in categoricas:
+                valor = _v_cramer(pareja[primera], pareja[segunda])
+            else:
+                categorica = primera if primera in categoricas else segunda
+                numerica = segunda if primera in categoricas else primera
+                valor = _razon_correlacion(pareja[categorica], pareja[numerica])
+            matriz.loc[primera, segunda] = matriz.loc[segunda, primera] = valor
+
+    etiquetas = {
+        "Rendimiento": "Rendimiento", "temperatura_media_ciclo_c": "Temperatura",
+        "precipitacion_ciclo_mm": "Precipitacion",
+        "grupo_suelo_dominante_pct": "% suelo dominante",
+        "textura_dominante_pct": "% textura dominante",
+        "fase_fisica_dominante_pct": "% fase fisica",
+        "fase_quimica_dominante_pct": "% fase quimica",
+        "grupos_suelo_n": "Diversidad de suelos",
+        "rendimiento_hist_cv": "Variabilidad historica",
+        "grupo_suelo_dominante": "Grupo de suelo", "textura_dominante": "Textura",
+        "fase_fisica_dominante": "Fase fisica", "fase_quimica_dominante": "Fase quimica",
+        "Nomcicloproductivo": "Ciclo productivo", "Nommodalidad": "Modalidad",
+    }
+    nombres = [etiquetas.get(columna, columna) for columna in columnas]
+    mascara = np.triu(np.ones(matriz.shape, dtype=bool), k=1)
+    valores = np.ma.array(matriz.to_numpy(), mask=mascara)
+    lado = max(10, len(columnas) * 0.72)
+    fig, ax = plt.subplots(figsize=(lado, lado * 0.9))
+    imagen = ax.imshow(valores, cmap="YlGnBu", vmin=0, vmax=1)
+    ax.set_xticks(range(len(nombres)), nombres, rotation=52, ha="right")
+    ax.set_yticks(range(len(nombres)), nombres)
+    ax.set_title("Asociacion entre rendimiento, clima y suelo", fontsize=16)
+    for fila in range(len(nombres)):
+        for columna in range(fila + 1):
+            valor = matriz.iloc[fila, columna]
+            ax.text(
+                columna, fila, "—" if pd.isna(valor) else f"{valor:.2f}",
+                ha="center", va="center", fontsize=8,
+                color="white" if pd.notna(valor) and valor >= 0.55 else "#17372c",
+            )
+    barra = fig.colorbar(imagen, ax=ax, fraction=0.035, pad=0.025)
+    barra.set_label("Fuerza de asociacion (0 a 1)")
+    fig.text(
+        0.01, 0.01,
+        "Spearman absoluto: numerica–numerica · eta: numerica–categorica · "
+        "V de Cramer: categorica–categorica.",
+        fontsize=9, color="#6c786f",
+    )
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
+    if ruta_salida is not None:
+        ruta_salida = Path(ruta_salida)
+        ruta_salida.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(ruta_salida, dpi=180, bbox_inches="tight")
+    return fig, ax, matriz, cobertura
+
+
+def crear_selector_asociacion_clima_suelo(
+    agricultura: pd.DataFrame,
+    unidad: str = "Tonelada",
+    minimo_registros: int = 300,
+    minimo_observaciones: int = 100,
+):
+    """Selector Jupyter de asociaciones mixtas por cultivo."""
+    try:
+        import ipywidgets as widgets
+    except ImportError as error:
+        raise ImportError("El selector requiere ipywidgets.") from error
+    base = agricultura.loc[agricultura["Nomunidad"].eq(unidad)].copy()
+    cobertura = (
+        base.groupby("Nomcultivo", observed=True).size()
+        .loc[lambda serie: serie.ge(minimo_registros)].sort_values(ascending=False)
+    )
+    opciones = [(f"{cultivo} · {n:,} registros", cultivo) for cultivo, n in cobertura.items()]
+    if not opciones:
+        raise ValueError("No hay cultivos con cobertura suficiente.")
+    selector = widgets.Dropdown(
+        options=opciones, value=opciones[0][1], description="Cultivo:",
+        layout=widgets.Layout(width="560px"), style={"description_width": "70px"},
+    )
+    salida = widgets.Output()
+
+    def actualizar(*_):
+        with salida:
+            salida.clear_output(wait=True)
+            cultivo = selector.value
+            datos = base.loc[base["Nomcultivo"].eq(cultivo)]
+            fig, ax, _, _ = crear_matriz_asociacion_clima_suelo(
+                datos, minimo_observaciones=minimo_observaciones,
+            )
+            ax.set_title(f"Rendimiento, clima y suelo · {cultivo}", fontsize=16)
+            plt.show()
+            plt.close(fig)
+            print(f"{cultivo}: {len(datos):,} registros analizados.")
+
+    selector.observe(actualizar, names="value")
+    actualizar()
+    return widgets.VBox([
+        widgets.HTML(
+            "<b>Asociaciones mixtas por cultivo</b><br>"
+            "Valores cercanos a 1 indican mayor asociación; no implican causalidad."
+        ),
+        selector, salida,
+    ])
 
 
 def crear_dispersion_con_tendencia(
