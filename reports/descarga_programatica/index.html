@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Presentación técnica sobre la adquisición programática y reproducible de datos del proyecto de agronomía.">
+  <title>Del portal al dato · Descarga programática</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="chrome">
+    <a class="brand" href="#inicio"><span class="brand-mark">{ }</span><span>Proyecto Agronomía</span></a>
+    <div class="chrome-actions"><span id="counter">01 / 10</span><button id="fullscreen" type="button">Pantalla completa</button></div>
+    <div class="progress"><span id="progress-bar"></span></div>
+  </header>
+
+  <nav class="rail" aria-label="Secciones">
+    <a href="#inicio" aria-label="Inicio"></a><a href="#arquitectura" aria-label="Arquitectura"></a>
+    <a href="#agricultura" aria-label="Agricultura"></a><a href="#inegi" aria-label="INEGI"></a>
+    <a href="#edafologia" aria-label="Edafología"></a><a href="#nasa" aria-label="NASA POWER"></a>
+    <a href="#mapbiomas" aria-label="MapBiomas"></a><a href="#notebooks" aria-label="Notebooks"></a>
+    <a href="#resiliencia" aria-label="Resiliencia"></a><a href="#reproducir" aria-label="Reproducir"></a>
+  </nav>
+
+  <main>
+    <section id="inicio" class="slide hero">
+      <div class="eyebrow">Adquisición reproducible · México · 2003—2025</div>
+      <div class="hero-grid">
+        <div>
+          <h1>Del portal al dato, sin pasos invisibles</h1>
+          <p class="lead">Cinco módulos, una configuración central y notebooks verificables convierten fuentes públicas heterogéneas en datos listos para analizar.</p>
+          <a class="next-link" href="#arquitectura">Recorrer el flujo <span>↓</span></a>
+        </div>
+        <div class="terminal" aria-label="Ejemplo de ejecución">
+          <div class="terminal-bar"><i></i><i></i><i></i><span>PowerShell</span></div>
+          <pre><em>$</em> python -m proyecto_agronomia.dataset agricultura
+
+<b>INFO</b> Descargando datos agrícolas 2003-2025
+<span>[2003] El archivo ya existe.</span>
+<span>[2004] El archivo ya existe.</span>
+⋮
+<strong>SUCCESS</strong> 23 archivos disponibles.</pre>
+        </div>
+      </div>
+      <p class="source-note">DGSIAP · NASA POWER · INEGI · MapBiomas</p>
+    </section>
+
+    <section id="arquitectura" class="slide paper">
+      <div class="section-number">01 · Una sola fuente de verdad</div>
+      <div class="split">
+        <div><h2>Las rutas no viven dispersas en las notebooks</h2><p class="lead dark"><code>config.py</code> concentra periodos, URLs, parámetros y directorios. Cada módulo recibe rutas por defecto, pero permite sustituirlas en pruebas o ejecuciones especiales.</p></div>
+        <div class="config-card">
+          <div><span>RAW</span><code>data/raw/{fuente}</code><small>Respuesta original, ZIP, JSON o TIFF</small></div>
+          <div><span>INTERIM</span><code>data/interim/{fuente}</code><small>Geometrías y resultados intermedios</small></div>
+          <div><span>PROCESSED</span><code>data/processed/{fuente}</code><small>Tablas listas para integrar</small></div>
+          <div><span>REFERENCES</span><code>references/</code><small>Diccionarios oficiales</small></div>
+        </div>
+      </div>
+      <div class="flow" aria-label="Flujo de adquisición"><b>config.py</b><i>→</i><span>datasets/*.py</span><i>→</i><span>notebooks/descarga_*.ipynb</span><i>→</i><strong>validación</strong></div>
+    </section>
+
+    <section id="agricultura" class="slide agriculture">
+      <div class="section-number">02 · Agricultura DGSIAP</div>
+      <div class="source-layout">
+        <div>
+          <h2>Un archivo anual, una ruta predecible</h2>
+          <p>La URL se construye con el año y cada respuesta se conserva como <code>agricola_{año}.csv</code>. Si el archivo existe, la función continúa sin descargarlo otra vez.</p>
+          <div class="kpis"><article><strong>23</strong><span>años solicitados</span></article><article><strong>23</strong><span>CSV locales</span></article><article><strong>131 MB</strong><span>en raw/agricultura</span></article></div>
+        </div>
+        <div class="code-card"><div class="file-label">datasets/agricultura.py</div><pre><code>for anio in ANIOS:
+    ruta = directorio / f"agricola_{anio}.csv"
+
+    if ruta.exists():
+        archivos.append(ruta)
+        continue
+
+    respuesta = requests.get(
+        URL.format(anio=anio), timeout=120
+    )
+    respuesta.raise_for_status()
+    ruta.write_bytes(respuesta.content)</code></pre></div>
+      </div>
+      <div class="evidence"><b>Además:</b><span>diccionario oficial XLSX</span><span>descubrimiento del catálogo DGSIAP</span><span>Avance Agrícola</span><span>AgroPrograma</span></div>
+    </section>
+
+    <section id="inegi" class="slide geo-slide">
+      <div class="section-number light">03 · Geografía INEGI</div>
+      <div class="source-layout">
+        <div>
+          <h2>Treinta y dos consultas forman un mapa nacional</h2>
+          <p>Las APIs de Marco Geoestadístico se consultan entidad por entidad. Las features se concatenan, se fija <code>EPSG:4326</code> y el resultado se guarda como GeoJSON.</p>
+          <div class="geo-steps"><span>01<br><b>consultar</b></span><i>→</i><span>32<br><b>entidades</b></span><i>→</i><span>1<br><b>GeoJSON nacional</b></span></div>
+        </div>
+        <div class="map-motif" aria-hidden="true"><div class="map-grid"></div><span class="pin p1"></span><span class="pin p2"></span><span class="pin p3"></span><span class="pin p4"></span><b>INEGI<br><small>EPSG:4326</small></b></div>
+      </div>
+      <div class="dual-note"><article><b>Municipios</b><span>municipios_mexico_inegi.geojson</span></article><article><b>Estados</b><span>estados_mexico_inegi.geojson</span></article><article><b>Uso de suelo</b><span>catálogo paginado + ZIP atómico</span></article></div>
+    </section>
+
+    <section id="edafologia" class="slide soil-slide">
+      <div class="section-number">04 · Edafología INEGI</div>
+      <div class="soil-layout">
+        <div>
+          <h2>Descargar una vez, conservar el original</h2>
+          <p class="lead dark">El conjunto Serie III a escala 1:250,000 llega como ZIP. Se transmite en bloques de 1 MB, se conserva en <code>raw</code> y sólo se extrae cuando la carpeta aún no existe.</p>
+          <ol class="pipeline-list"><li><b>GET con streaming</b><span>timeout de 300 segundos</span></li><li><b>ZIP original</b><span>trazabilidad de la fuente</span></li><li><b>Extracción controlada</b><span>capas de área y puntos</span></li><li><b>Diccionario PDF</b><span>referencia oficial separada</span></li></ol>
+        </div>
+        <div class="soil-stack"><div>ZIP<br><small>487.5 MB en raw</small></div><div>SHP</div><div>DBF</div><div>PRJ</div><div>PDF</div></div>
+      </div>
+    </section>
+
+    <section id="nasa" class="slide nasa-slide">
+      <div class="section-number light">05 · Clima NASA POWER</div>
+      <div class="nasa-grid">
+        <div><h2>Menos solicitudes, más capacidad de reanudar</h2><p>Los municipios se agrupan en la cuadrícula MERRA-2 de <b>0.5° × 0.625°</b>. Cada celda se consulta una sola vez y su JSON queda como caché reutilizable.</p></div>
+        <div class="orbit"><div class="earth">T2M<br><span>PRECTOTCORR</span></div><i></i><i></i><i></i></div>
+      </div>
+      <div class="nasa-cards">
+        <article><b>Reintentos</b><span>HTTP 429 y errores 5xx con espera exponencial</span></article>
+        <article><b>Caché</b><span>3,430 JSON; una desconexión no reinicia todo</span></article>
+        <article><b>Integridad</b><span>−999 se transforma en nulo y se cuentan días válidos</span></article>
+        <article><b>Granularidad</b><span>anual, periodos agrícolas, trimestral y mensual</span></article>
+      </div>
+      <div class="calendar"><span>2002</span><i>para Otoño–Invierno 2003</i><b>→</b><span>2003—2025</span><i>24 años mensuales</i></div>
+    </section>
+
+    <section id="mapbiomas" class="slide mapbiomas-slide">
+      <div class="section-number">06 · MapBiomas</div>
+      <div class="split">
+        <div><h2>Procesamiento explícito, no una descarga implícita</h2><p class="lead dark">El módulo parte de TIFF ya disponibles en <code>data/raw/mapbiomas</code>. Esto evita esconder un mecanismo de adquisición externo y hace visible la procedencia del raster.</p><div class="truth-note"><b>Decisión de diseño</b><span>La descarga del TIFF queda fuera del código hasta contar con una fuente estable y documentada.</span></div></div>
+        <div class="raster-demo"><div class="pixels"></div><div class="raster-arrow">→</div><div class="class-list"><span><i class="annual"></i>19 · Cultivo anual</span><span><i class="perennial"></i>36 · Cultivo perenne</span><span><i class="mosaic"></i>21 · Mosaico agropecuario</span></div></div>
+      </div>
+      <div class="output-line"><code>TIFF</code><i>→ rasterio →</i><code>x · y · clase_id · clase</code><i>→</i><code>CSV.GZ / Parquet</code></div>
+    </section>
+
+    <section id="notebooks" class="slide notebook-slide">
+      <div class="section-number">07 · Notebooks como evidencia ejecutable</div>
+      <h2>Las notebooks orquestan; los módulos hacen el trabajo</h2>
+      <div class="notebook-grid">
+        <article><div class="nb-head"><i></i><b>descarga_agricola.ipynb</b></div><pre><code>archivos = descargar_datos_agricolas(ANIOS)
+print(f"Archivos disponibles: {len(archivos)}")</code></pre><span>Descarga · disponibilidad · diccionario</span></article>
+        <article><div class="nb-head"><i></i><b>descarga_clima_nasa.ipynb</b></div><pre><code>descargar_clima_nasa_mensual_por_celdas(
+    municipios, inicio=2003, fin=2025
+)</code></pre><span>Puntos INEGI · caché · validación nacional</span></article>
+        <article><div class="nb-head"><i></i><b>descarga_edafologia.ipynb</b></div><pre><code>ruta = descargar_edafologia_inegi()
+capas = list(ruta.rglob("*.shp"))</code></pre><span>ZIP · extracción · inspección de capas</span></article>
+        <article><div class="nb-head"><i></i><b>descargar_inegi.ipynb</b></div><pre><code>municipios = obtener_municipios_inegi()
+estados = obtener_estados_inegi()</code></pre><span>GeoJSON · coordenadas representativas</span></article>
+      </div>
+    </section>
+
+    <section id="resiliencia" class="slide resilience-slide">
+      <div class="section-number light">08 · Diseñado para fallar bien</div>
+      <div class="resilience-layout">
+        <div><h2>Internet puede fallar; el proceso no debe empezar de cero</h2><p>La adquisición separa errores recuperables, archivos completos y resultados validados.</p></div>
+        <div class="checks"><article><b>01</b><span>Existe → reutilizar</span></article><article><b>02</b><span>Timeout → reintentar</span></article><article><b>03</b><span>.tmp / .part → escritura atómica</span></article><article><b>04</b><span>HTTP inválido → detener</span></article><article><b>05</b><span>Clave duplicada → rechazar</span></article><article><b>06</b><span>Días incompletos → nulo explícito</span></article></div>
+      </div>
+      <div class="principle">Idempotencia <i>+</i> caché <i>+</i> validaciones <i>=</i> <strong>reproducibilidad operativa</strong></div>
+    </section>
+
+    <section id="reproducir" class="slide final">
+      <div class="section-number light">09 · Dos formas de ejecutar</div>
+      <div class="final-grid">
+        <div><h2>La misma lógica, con o sin notebook</h2><p class="lead">Las notebooks documentan. La CLI automatiza. Ambas llaman a las mismas funciones del paquete.</p></div>
+        <div class="commands"><code>python -m proyecto_agronomia.dataset agricultura</code><code>python -m proyecto_agronomia.dataset inegi</code><code>python -m proyecto_agronomia.dataset edafologia</code><code>python -m proyecto_agronomia.dataset inegi-uso-suelo --series VII</code><code>python -m proyecto_agronomia.dataset mapbiomas-procesar</code></div>
+      </div>
+      <div class="closing"><span>Fuente pública</span><i>→</i><span>respuesta original</span><i>→</i><span>validación</span><i>→</i><b>dato reproducible</b></div>
+      <footer><span>Proyecto Agronomía · Adquisición programática</span><span>2026</span></footer>
+    </section>
+  </main>
+  <div class="keyboard-hint">← → para navegar</div>
+  <script src="app.js"></script>
+</body>
+</html>
