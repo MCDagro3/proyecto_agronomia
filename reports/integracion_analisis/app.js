@@ -53,6 +53,13 @@ document.querySelectorAll('[data-evidence]').forEach(button => button.addEventLi
   });
 }));
 
+document.querySelectorAll('[data-climate-view]').forEach(button => button.addEventListener('click', () => {
+  document.querySelectorAll('[data-climate-view]').forEach(item => item.classList.toggle('active', item === button));
+  document.querySelectorAll('.climate-panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === `climate-${button.dataset.climateView}`);
+  });
+}));
+
 const stabilityCrop = document.querySelector('#stability-crop');
 const stabilityMap = document.querySelector('#stability-map');
 function median(values) {

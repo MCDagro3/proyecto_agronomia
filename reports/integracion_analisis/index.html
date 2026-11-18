@@ -34,6 +34,8 @@
     <section id="clima" class="slide climate-slide">
       <div class="section-number light">02 · Clima por ciclo productivo</div>
       <div class="climate-heading"><div><h2>Del dato diario de NASA al clima de cada ciclo</h2><p>El clima de 2002 aporta octubre–diciembre para construir Otoño–Invierno 2003. Cada ciclo recibe su propia ventana de meses.</p></div><div class="climate-kpi"><strong>713,664</strong><span>registros mensuales: 2,478 municipios × 24 años × 12 meses</span></div></div>
+      <div class="climate-view-tabs"><button class="active" data-climate-view="method">Ventanas agrícolas</button><button data-climate-view="animation">Clima nacional</button></div>
+      <div id="climate-method" class="climate-panel active">
       <div class="flow">
         <article><small>1 · Obtención</small><b>NASA POWER</b><span>API consultada en el punto geográfico de cada municipio (INEGI), 2002–2025.</span></article>
         <article><small>2 · Validación</small><b>Meses completos</b><span>Sin duplicados ni nulos; los días con dato igualan a los días esperados del mes.</span></article>
@@ -45,6 +47,10 @@
         <article><b>Perennes</b><div><i class="active perennial" style="--start:0;--width:100%"></i></div><span>enero → diciembre</span></article>
       </div>
 <div class="merge-strip"><article><b>Se agregaron 33 columnas a cada registro de agricultura</b></article></div>
+      </div>
+      <div id="climate-animation" class="climate-panel">
+        <figure class="climate-gif-frame"><img src="../figures/clima_mensual_mexico_2003_2025.gif" alt="Animación mensual de temperatura y precipitación municipal de México entre 2003 y 2025"><figcaption>Temperatura media y precipitación mensual municipal · NASA POWER · 2003—2025</figcaption></figure>
+      </div>
     </section>
 
     <section id="suelo" class="slide soil-slide">
