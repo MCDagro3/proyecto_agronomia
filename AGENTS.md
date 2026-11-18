@@ -43,6 +43,24 @@
   I→VII con seguimiento de cambios de ciclo y régimen.
 - `data/process/INEGI/puntos_agricolas_seguimiento.csv`: formato largo, 7 filas por punto.
 
+## NASA POWER
+
+- Extracción en `scripts/nasa_power.py` + `notebooks/nasa_1.ipynb`. NO usar la
+  API REST para volúmenes grandes: se leen los stores Zarr públicos en AWS S3
+  (`nasa-power.s3.us-west-2.amazonaws.com/{store}/temporal/power_{store}_daily_temporal_{lst|utc}.zarr`)
+  con `zarr`+`fsspec`+`numpy` (xarray instalado pero no usado).
+- Stores: `merra2` (meteo, diario 1981→~2029, grilla 0.5°×0.625°), `syn1deg`
+  (solar, diario 2001→~2029, grilla 1°×1°), `srb` (1984+, sin DIRH/UV/PSH),
+  `imerg` (0.1°, 1998+, sólo UTC), `geosit` (cola NRT 2020+, redundante).
+- Eje `time` = "days since <fecha>" (ver `attrs['units']`); decodificar a mano.
+- Subset agrícola en `PARAMETROS_AGRICOLAS` (14 params). Unidades del ARD ya
+  vienen en unidades de usuario (°C, mm/día, W m⁻²); IMERG_*/SNODP/CLRSKY_DAYS
+  excluidos. Salidas: `data/interm/NASA/serie_{I..VII}/{param}.parquet`
+  (largo: time,lat,lon,value,units) + `catalogo_parametros.csv`.
+- Mapeo serie→año: I→1981, II→1985, III→1993, IV→2002, V→2007, VI→2015,
+  VII→2018 (ver `docs/metodologia_usv_inegi_mapbiomas.md`). syn1deg sólo cubre
+  series IV–VII.
+
 ## Precauciones
 
 - `.env` contiene una llave de WeatherAPI; no exponerla.

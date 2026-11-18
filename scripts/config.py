@@ -1,9 +1,9 @@
 """
     Configuraciones Generales del Proyecto de Agronomia.
 """
-from yarl import URL
 from pathlib import Path
 
+from yarl import URL
 
 ROOT = list(Path(__file__).resolve().parents)[1]
 DATA_DIR = ROOT / "data"
@@ -18,7 +18,7 @@ def save_path(folderfinal, **kwargs)-> Path:
     
 
 # Fuentes de datos utilizadas
-data_sources = ['DGSIAP','INEGI','OPENMETEO','DATAMEXICO']
+data_sources = ['DGSIAP','INEGI','OPENMETEO','DATAMEXICO','NASA']
 
 # Las etapas de nuestros datos.
 ## El orden de la lista expone los pasos del procesamiento.
@@ -44,7 +44,7 @@ source_links = {"DGSIAP": {
                     "download": None},
                 "INEGI":{"MAPA GENERAL":{
                     "request": None,
-                    "download": URL("https://www.inegi.org.mx/contenidos/productos/prod_serv/contenidos/espanol/bvinegi/productos/geografia/marcogeo/794551196649/mg_integrado_encuesta_intercensal_2025.zip")}
+                    "download": URL("https://www.inegi.org.mx/contenidos/productos/prod_serv/contenidos/espanol/bvinegi/productos/geografia/marcogeo/794551163061_s.zip")}
                     }
 }
 
@@ -60,7 +60,7 @@ dgsiap_info = info['Agricola']
 
 PRELOAD_FOLDER = ROOT / "preload"
 # Datos Publicos precargados para acelerar el analisis de datos
-PRELOADS = {"MAPA GENERAL": PRELOAD_FOLDER / "mexico_agro.zip",
+PRELOADS = {"MAPA GENERAL": PRELOAD_FOLDER / "MexicoBase.zip",
             "AGROPROD_0": PRELOAD_FOLDER / "DGSIAP_PREP.pkl",
             "AGROPROD_1": PRELOAD_FOLDER / "DGSIAP_NORM.pkl",
             "AGROPROD_2": PRELOAD_FOLDER / "DGSIAP_PROCESS.pkl",
