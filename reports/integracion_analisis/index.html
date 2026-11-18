@@ -99,7 +99,15 @@
     <section id="estabilidad" class="slide stability-slide">
       <div class="section-number light">08 · Rendimiento, estabilidad y riesgo</div>
       <div class="stability-heading"><div><h2>Producir más no significa producir de forma estable</h2><p>El coeficiente de variación distingue municipios consistentes de municipios volátiles. Los siniestros y anomalías climáticas aportan otra lectura del riesgo.</p></div><div class="media-tabs secondary"><button class="active" data-evidence="stability">Estabilidad</button><button data-evidence="risk">Siniestros</button><button data-evidence="series">Series</button></div></div>
-      <figure class="wide-media evidence-media"><img id="evidence-image" src="../figures/mapa_estabilidad_rendimiento_maiz.png" alt="Mapa municipal de estabilidad del rendimiento de maíz"><figcaption id="evidence-caption">Maíz grano · verde = menor variabilidad histórica</figcaption></figure>
+      <div id="evidence-stability" class="evidence-panel active">
+        <div class="stability-control"><label for="stability-crop">Cultivo</label><select id="stability-crop" aria-label="Seleccionar cultivo para el mapa de estabilidad"></select></div>
+        <div class="interactive-stability-layout">
+          <figure class="stability-map-frame"><svg id="stability-map" viewBox="0 0 1000 600" role="img" aria-label="Mapa interactivo de presencia y estabilidad municipal"></svg><figcaption>Verde = menor variabilidad · rojo = mayor variabilidad · pasa el cursor sobre un municipio</figcaption></figure>
+          <aside class="stability-stats" aria-live="polite"><article><strong id="presence-count">—</strong><span>municipios con presencia histórica</span></article><article><strong id="median-cv">—</strong><span>coeficiente de variación mediano</span></article><article><strong id="median-yield">—</strong><span>rendimiento histórico mediano (t/ha)</span></article><p id="stability-reading"></p></aside>
+        </div>
+      </div>
+      <div id="evidence-risk" class="evidence-panel"><figure class="wide-media evidence-media"><img src="../figures/siniestros_anomalias_climaticas.png" alt="Relación entre siniestros y anomalías climáticas"><figcaption>Superficie siniestrada frente a anomalías municipales de clima</figcaption></figure></div>
+      <div id="evidence-series" class="evidence-panel"><figure class="wide-media evidence-media"><img src="../figures/series_superficie_produccion_rendimiento.png" alt="Series de superficie, producción y rendimiento"><figcaption>Trayectoria productiva de los cultivos principales</figcaption></figure></div>
     </section>
 
     <section id="conclusion" class="slide final">
@@ -113,6 +121,7 @@
     </section>
   </main>
   <div class="keyboard-hint">← → para navegar</div>
+  <script src="../storytelling/estabilidad_data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
