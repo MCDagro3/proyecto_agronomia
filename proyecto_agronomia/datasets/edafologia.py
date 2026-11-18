@@ -13,6 +13,7 @@ from proyecto_agronomia.config import (
 
 GRUPOS_SUELO_WRB = {
     "AC": "Acrisol", "AL": "Alisol", "AN": "Andosol", "AT": "Anthrosol",
+    "SA": "Suelo cubierto por agua",
     "AR": "Arenosol", "CL": "Calcisol", "CM": "Cambisol", "CH": "Chernozem",
     "CR": "Cryosol", "DU": "Durisol", "FR": "Ferralsol", "FL": "Fluvisol",
     "GL": "Gleysol", "GY": "Gypsisol", "HS": "Histosol", "KS": "Kastanozem",

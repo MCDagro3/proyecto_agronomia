@@ -44,7 +44,6 @@ VARIABLES_NUMERICAS = [
     "temperatura_dic_anterior_c", "precipitacion_oct_anterior_mm",
     "precipitacion_nov_anterior_mm", "precipitacion_dic_anterior_mm",
     "grupo_suelo_dominante_pct", "textura_dominante_pct",
-    "fase_fisica_dominante_pct", "fase_quimica_dominante_pct",
     "grupos_suelo_n",
 ]
 
@@ -54,8 +53,7 @@ VARIABLES_ORDINALES = ["textura_dominante"]
 # Estas son etiquetas, no distancias; por ello se aplica one-hot.
 VARIABLES_NOMINALES = [
     "Nomestado", "Nomcultivo", "Nomcicloproductivo", "Nommodalidad",
-    "Nomunidad", "grupo_suelo_dominante", "fase_fisica_dominante",
-    "fase_quimica_dominante",
+    "Nomunidad", "grupo_suelo_dominante",
 ]
 
 COLUMNAS_LECTURA = list(dict.fromkeys(

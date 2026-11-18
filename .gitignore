@@ -196,3 +196,11 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Jupyter colaborativo (servidor usado por Claude Code vía Jupyter MCP)
+.jupyter/
+.jupyter_ystore.db
+
+# Claude Code: configuración local
+.claude/settings.local.json
+CLAUDE.md
