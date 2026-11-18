@@ -29,7 +29,6 @@ VARIABLES_NUMERICAS = [
 VARIABLES_CATEGORICAS = [
     "Nomestado", "Nomcicloproductivo", "Nommodalidad",
     "grupo_suelo_dominante", "textura_dominante",
-    "fase_fisica_dominante", "fase_quimica_dominante",
 ]
 COLUMNAS_BASE = [
     "cvegeo", "Anio", "Nomestado", "Nommunicipio", "Nomcultivo",
@@ -121,8 +120,6 @@ def preparar_cultivo(datos_nacionales: pd.DataFrame, cultivo: str) -> pd.DataFra
         grupo_suelo_dominante_pct=("grupo_suelo_dominante_pct", "first"),
         grupos_suelo_n=("grupos_suelo_n", "first"),
         textura_dominante=("textura_dominante", "first"),
-        fase_fisica_dominante=("fase_fisica_dominante", "first"),
-        fase_quimica_dominante=("fase_quimica_dominante", "first"),
         rendimiento_hist_anios=("rendimiento_hist_anios", "first"),
         rendimiento_anio_anterior=("rendimiento_anio_anterior", "first"),
         rendimiento_hist_media=("rendimiento_hist_media", "first"),

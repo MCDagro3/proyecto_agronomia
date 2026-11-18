@@ -42,15 +42,51 @@ def _categoria_dominante_por_superficie(
     return dominante.drop(columns="area_interseccion_m2")
 
 
+def _composicion_por_superficie(
+    intersecciones: gpd.GeoDataFrame,
+    areas_municipales: pd.Series,
+    columna: str = "Grupo1",
+    prefijo: str = "suelo_pct_",
+) -> pd.DataFrame:
+    """Porcentaje del área municipal que ocupa cada grupo de suelo.
+
+    Devuelve una columna por grupo (por ejemplo ``suelo_pct_LP``). Los grupos
+    ausentes en un municipio valen 0. ``SA`` (suelo cubierto por agua) se
+    trata como un grupo más.
+    """
+    datos = intersecciones[["cvegeo", columna, "area_interseccion_m2"]].copy()
+    datos[columna] = datos[columna].astype("string").str.strip()
+    datos = datos.loc[
+        datos[columna].notna()
+        & ~datos[columna].isin(VALORES_SIN_CLASIFICACION)
+    ]
+    composicion = datos.pivot_table(
+        index="cvegeo",
+        columns=columna,
+        values="area_interseccion_m2",
+        aggfunc="sum",
+        fill_value=0.0,
+        observed=True,
+    )
+    composicion = (
+        composicion.div(composicion.index.map(areas_municipales), axis=0)
+        * 100
+    ).round(2)
+    composicion = composicion[sorted(composicion.columns)]
+    composicion.columns = [f"{prefijo}{grupo}" for grupo in composicion.columns]
+    composicion.columns.name = None
+    return composicion.reset_index()
+
+
 def resumir_edafologia_municipal(
     municipios: gpd.GeoDataFrame,
     edafologia: gpd.GeoDataFrame,
     crs_areas: str = "EPSG:6372",
 ) -> pd.DataFrame:
-    """Calcula categorías edafológicas dominantes por superficie municipal."""
+    """Calcula categorías dominantes y composición de suelos por municipio."""
     if "cvegeo" not in municipios.columns:
         raise KeyError("La capa municipal no contiene 'cvegeo'.")
-    requeridas = {"Grupo1", "Clase_tex", "Fase_fis_u", "Fase_qui_u"}
+    requeridas = {"Grupo1", "Clase_tex"}
     faltantes = requeridas - set(edafologia.columns)
     if faltantes:
         raise KeyError(f"Faltan columnas edafológicas: {sorted(faltantes)}")
@@ -81,8 +117,6 @@ def resumir_edafologia_municipal(
     configuracion = {
         "Grupo1": "grupo_suelo_dominante",
         "Clase_tex": "textura_dominante",
-        "Fase_fis_u": "fase_fisica_dominante",
-        "Fase_qui_u": "fase_quimica_dominante",
     }
     for columna, salida in configuracion.items():
         resumen = _categoria_dominante_por_superficie(
@@ -107,6 +141,14 @@ def resumir_edafologia_municipal(
     resultado = resultado.merge(
         diversidad, on="cvegeo", how="left", validate="one_to_one"
     )
+    composicion = _composicion_por_superficie(intersecciones, areas_municipales)
+    resultado = resultado.merge(
+        composicion, on="cvegeo", how="left", validate="one_to_one"
+    )
+    columnas_composicion = [
+        columna for columna in composicion.columns if columna != "cvegeo"
+    ]
+    resultado[columnas_composicion] = resultado[columnas_composicion].fillna(0.0)
     resultado["nombre_suelo_wrb"] = resultado["grupo_suelo_dominante"].map(
         GRUPOS_SUELO_WRB
     )

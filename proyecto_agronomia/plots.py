@@ -338,12 +338,10 @@ def crear_matriz_asociacion_clima_suelo(
     numericas = [
         "Rendimiento", "temperatura_media_ciclo_c", "precipitacion_ciclo_mm",
         "grupo_suelo_dominante_pct", "textura_dominante_pct",
-        "fase_fisica_dominante_pct", "fase_quimica_dominante_pct",
         "grupos_suelo_n", "rendimiento_hist_cv",
     ]
     categoricas = [
         "grupo_suelo_dominante", "textura_dominante",
-        "fase_fisica_dominante", "fase_quimica_dominante",
         "Nomcicloproductivo", "Nommodalidad",
     ]
     numericas = [columna for columna in numericas if columna in agricultura.columns]
@@ -379,12 +377,9 @@ def crear_matriz_asociacion_clima_suelo(
         "precipitacion_ciclo_mm": "Precipitacion",
         "grupo_suelo_dominante_pct": "% suelo dominante",
         "textura_dominante_pct": "% textura dominante",
-        "fase_fisica_dominante_pct": "% fase fisica",
-        "fase_quimica_dominante_pct": "% fase quimica",
         "grupos_suelo_n": "Diversidad de suelos",
         "rendimiento_hist_cv": "Variabilidad historica",
         "grupo_suelo_dominante": "Grupo de suelo", "textura_dominante": "Textura",
-        "fase_fisica_dominante": "Fase fisica", "fase_quimica_dominante": "Fase quimica",
         "Nomcicloproductivo": "Ciclo productivo", "Nommodalidad": "Modalidad",
     }
     nombres = [etiquetas.get(columna, columna) for columna in columnas]
