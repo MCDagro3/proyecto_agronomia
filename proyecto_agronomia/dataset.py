@@ -20,8 +20,7 @@ from proyecto_agronomia.datasets.inegi import (
     obtener_estados_inegi,
     obtener_municipios_inegi,
 )
-from proyecto_agronomia.datasets.mapbiomas import procesar_directorio_mapbiomas
-
+from proyecto_agronomia.datasets.mapbiomas import descargar_mapbiomas
 
 app = typer.Typer(help="Adquisición de datos del proyecto de agronomía.")
 
@@ -41,8 +40,7 @@ def inegi():
     municipios = obtener_municipios_inegi()
     estados = obtener_estados_inegi()
     logger.success(
-        f"INEGI terminado. {len(municipios):,} municipios y "
-        f"{len(estados)} estados disponibles."
+        f"INEGI terminado. {len(municipios):,} municipios y {len(estados)} estados disponibles."
     )
 
 
@@ -83,11 +81,17 @@ def inegi_uso_suelo(
     logger.success(f"Series de uso del suelo disponibles: {len(rutas)}")
 
 
-@app.command("mapbiomas-procesar")
-def mapbiomas_procesar():
-    """Extrae las clases agrícolas de los TIFF disponibles de MapBiomas."""
-    rutas = procesar_directorio_mapbiomas()
-    logger.success(f"Rasters MapBiomas procesados: {len(rutas)}")
+@app.command()
+def mapbiomas(
+    estados: str = typer.Option(
+        "nacional",
+        help="'nacional' (un TIFF por año) o claves INEGI separadas por comas ('01,02').",
+    ),
+):
+    """Descarga la cobertura MapBiomas México 2002-2025 (API de la plataforma)."""
+    claves = None if estados.lower() == "nacional" else [c.strip() for c in estados.split(",")]
+    resultado = descargar_mapbiomas(claves_estado=claves)
+    logger.success(f"MapBiomas terminado. {len(resultado)} estados disponibles.")
 
 
 @app.command()

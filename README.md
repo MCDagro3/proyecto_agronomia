@@ -189,7 +189,7 @@ el archivo mensual es la fuente climática procesada de mayor granularidad.
 3. Ejecutar la agregación con `EJECUTAR_AGREGACION_MENSUAL = True`.
 4. Validar las 12 observaciones mensuales por municipio y año.
 5. Cambiar la bandera a `False` después de generar el CSV.
-6. Ejecutar `notebooks/integracion_agricultura_clima.ipynb`.
+6. Ejecutar `notebooks/integracion_datasets.ipynb`.
 
 La integración no une directamente las 12 filas mensuales con cada registro
 agrícola, porque eso multiplicaría las observaciones. Primero transforma los
@@ -422,7 +422,7 @@ proyecto_agronomia/datasets/clima_nasa.py
 La integración posterior se ejecuta en:
 
 ```text
-notebooks/integracion_agricultura_clima.ipynb
+notebooks/integracion_datasets.ipynb
 ```
 
 ---
@@ -542,7 +542,7 @@ posibles problemas de fuga de información.
 ├── notebooks/              <- Reproducible Jupyter notebooks
 │   ├── descarga_agricola.ipynb
 │   ├── descarga_clima_nasa.ipynb
-│   ├── integracion_agricultura_clima.ipynb
+│   ├── integracion_datasets.ipynb
 │   └── analisis_exploratorio.ipynb
 │
 ├── references/             <- Data dictionaries and supporting material
