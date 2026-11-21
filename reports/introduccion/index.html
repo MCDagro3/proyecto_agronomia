@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Introducción al proyecto de ciencia de datos sobre la distribución de cultivos en México, 2003-2025.">
+  <title>Producción agrícola en México · Introducción</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="chrome">
+    <a class="brand" href="#inicio"><span class="brand-mark">MX</span><span>Introducción</span></a>
+    <div class="chrome-actions"><span id="counter">01 / 10</span><button id="fullscreen" type="button">Pantalla completa</button></div>
+    <div class="progress"><span id="progress-bar"></span></div>
+  </header>
+  <nav class="rail" aria-label="Secciones">
+    <a href="#inicio" aria-label="Inicio"></a><a href="#objetivo" aria-label="Objetivo"></a>
+    <a href="#datos" aria-label="Datos"></a><a href="#ingesta" aria-label="Ingesta de datos"></a>
+    <a href="#retos" aria-label="Retos"></a><a href="#reto-codificacion" aria-label="Reto: codificación"></a>
+    <a href="#reto-tamano" aria-label="Reto: volumen"></a><a href="#reto-formato" aria-label="Reto: formato"></a>
+    <a href="#reto-fuente" aria-label="Reto: cambio de fuente"></a><a href="#siguientes" aria-label="Siguientes pasos"></a>
+  </nav>
+
+  <main>
+    <section id="inicio" class="slide hero">
+      <div class="section-number light">México · producción agrícola · 2003—2025</div>
+      <div class="split">
+        <div>
+          <h1>Décimo productor mundial… ¿y si pudiéramos producir más?</h1>
+          <p class="lead">México es el décimo productor agrícola del mundo según el DGSIAP. Pero países más pequeños como Indonesia, Pakistán y Nigeria producen más. Nigeria, por ejemplo, produce ~30% más siendo ~50% más pequeño: una diferencia que motiva preguntar si México tiene margen para aumentar.</p>
+          <a class="next-link" href="#objetivo">Conocer el proyecto <span>↓</span></a>
+        </div>
+        <div class="compare-grid">
+          <article class="compare-card"><small>México</small><strong>10º</strong><span>productor agrícola mundial · DGSIAP</span></article>
+          <article class="compare-card"><small>Nigeria</small><strong>+30%</strong><span>más producción con ~50% menos territorio</span></article>
+        </div>
+      </div>
+      <p class="source-note">Fuentes: DGSIAP · NASA POWER · INEGI · MapBiomas</p>
+    </section>
+
+    <section id="objetivo" class="slide paper">
+      <div class="section-number">01 · El objetivo</div>
+      <div class="split">
+        <div>
+          <h2>Entender dónde y por qué se cultiva hoy</h2>
+          <p class="lead dark">El proyecto analiza la distribución de los cultivos del país a nivel municipio, con la intención de explorar nuevas propuestas para aumentar la producción agrícola nacional.</p>
+        </div>
+        <div class="principles">
+          <article><b>Clima</b><span>Variables meteorológicas que condicionan el cultivo de cada región.</span></article>
+          <article><b>Suelo</b><span>Composición y uso del suelo como límites teóricos de producción.</span></article>
+          <article><b>Historia</b><span>El pasado agrícola gestionado por el SIAP.</span></article>
+          <article><b>Escenarios</b><span>Explorar mejoras a partir de los tres bloques anteriores.</span></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="datos" class="slide soil-slide">
+      <div class="section-number">02 · Los datos</div>
+      <h2>Tres bloques: historia, clima y suelo</h2>
+      <div class="fix-grid tri">
+        <article>
+          <small>La historia</small>
+          <b>SIAP · DGSIAP</b>
+          <span>No se parte de cero: México lleva décadas sembrando. La producción histórica vive en el portal de Datos Abiertos del DGSIAP, en archivos anuales por ciclo productivo.</span>
+        </article>
+        <article>
+          <small>El clima</small>
+          <b>NASA POWER</b>
+          <span>La lluvia y la temperatura media definen empíricamente el cultivo de cada municipio. Se eligió el portal NASA POWER por su cobertura histórica y su API.</span>
+        </article>
+        <article>
+          <small>El suelo</small>
+          <b>INEGI + MapBiomas</b>
+          <span>Composición: mapas de edafología de INEGI. Uso: Series de Uso de Suelo y Vegetación de INEGI y el proyecto MapBiomas México, que muestran cómo se distribuye cada tipo de agricultura.</span>
+        </article>
+      </div>
+    </section>
+
+    <section id="ingesta" class="slide join-slide">
+      <div class="section-number light">03 · Ingesta de datos</div>
+      <h2>Descarga programática, con excepciones visibles</h2>
+      <div class="flow">
+        <article>
+          <small>API</small>
+          <b>NASA POWER</b>
+          <span>La POWER Daily API permite extraer datos meteorológicos por coordenadas geográficas de cada municipio.</span>
+        </article>
+        <article>
+          <small>Web scraping</small>
+          <b>DGSIAP + INEGI</b>
+          <span>Producción histórica y mapas de INEGI se descargaron explorando el Portal de Datos Abiertos del DGSIAP y el Portal de Mapas de INEGI.</span>
+        </article>
+        <article>
+          <small>Descarga manual</small>
+          <b>MapBiomas</b>
+          <span>No se encontró una técnica viable de descarga programática; los datos se obtuvieron con las herramientas oficiales de MapBiomas.</span>
+        </article>
+      </div>
+    </section>
+
+    <section id="retos" class="slide agriculture-slide">
+      <div class="section-number">04 · Los retos de la ingesta</div>
+      <h2>Cada fuente escondía una sorpresa</h2>
+      <p class="lead dark">Antes de analizar hubo que resolver problemas de codificación, volumen, formato y fuente. Ninguno bloqueó el proyecto, pero todos cambiaron cómo se ingieren los datos.</p>
+      <div class="fix-grid">
+        <article>
+          <small>Reto 01 · DGSIAP</small>
+          <b>Archivos ilegibles</b>
+          <span>Los 23 CSV anuales de producción no los abría pandas por su codificación; cchardet la identificó y todos quedaron legibles.</span>
+        </article>
+        <article>
+          <small>Reto 02 · INEGI</small>
+          <b>Mapa de más de 2 GB</b>
+          <span>El Marco Geoestadístico nacional era inviable; se consultó entidad por entidad y se consolidó un solo GeoJSON.</span>
+        </article>
+        <article>
+          <small>Reto 03 · MapBiomas</small>
+          <b>TIFF en vez de SHP</b>
+          <span>MapBiomas entrega GeoTIFF, no shapefiles como INEGI; rasterio permitió leer los píxeles agrícolas.</span>
+        </article>
+        <article>
+          <small>Reto 04 · Clima</small>
+          <b>Open-Meteo inviable</b>
+          <span>Las limitaciones de la API obligaron a evaluar alternativas hasta elegir NASA POWER.</span>
+        </article>
+      </div>
+    </section>
+
+    <section id="reto-codificacion" class="slide climate-slide">
+      <div class="section-number light">Reto 01 · Codificación</div>
+      <h2>Archivos que pandas no podía leer</h2>
+      <p class="lead">Los 23 CSV anuales de producción (2003—2025) y su diccionario XLSX llegaron del portal DGSIAP, pero pandas no identificaba la codificación y la lectura fallaba. La solución fue detectar la codificación probable antes de leer.</p>
+      <div class="before-after">
+        <div><small>El problema</small><code>pd.read_csv("agricola_2003.csv")</code><b>UnicodeDecodeError</b></div>
+        <i>→</i>
+        <div><small>La solución</small><code>cchardet.detect(muestra)</code><b>latin-1 · 23 archivos legibles</b></div>
+      </div>
+      <div class="file-card"><code>detectar_codificacion(ruta)</code><strong>Una muestra de 1 MB basta</strong><span>io.py estima la codificación con cchardet; leer_tabla reintenta y la salida se normaliza a UTF-8.</span></div>
+    </section>
+
+    <section id="reto-tamano" class="slide soil-slide">
+      <div class="section-number">Reto 02 · Volumen</div>
+      <div class="split">
+        <div>
+          <h2>Un archivo de más de 2 GB</h2>
+          <p class="lead dark">El mapa nacional de municipios del Marco Geoestadístico de INEGI superaba los 2 GB: descargarlo entero era inviable. La salida fue consultar la API cartográfica entidad por entidad y consolidar el resultado.</p>
+          <div class="soil-facts"><span><b>32</b> entidades consultadas</span><span><b>1</b> GeoJSON nacional</span><span><b>EPSG:4326</b> · WGS84</span><span><b>487.5 MB</b> ZIP de edafología Serie III</span></div>
+        </div>
+        <div class="principles">
+          <article><b>Por estado</b><span>32 consultas a la API cartográfica en lugar de una descarga masiva.</span></article>
+          <article><b>Consolidación</b><span>Los features se unen en municipios_mexico_inegi.geojson.</span></article>
+          <article><b>Edafología</b><span>El ZIP de 487.5 MB se conserva en raw/ y se extrae una sola vez.</span></article>
+          <article><b>Reutilización</b><span>Si el GeoJSON ya existe, no se vuelve a descargar.</span></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="reto-formato" class="slide join-slide">
+      <div class="section-number light">Reto 03 · Formato</div>
+      <h2>MapBiomas no habla shapefile</h2>
+      <p class="lead">INEGI entrega SHP, pero MapBiomas distribuye GeoTIFF —y sin una vía de descarga programática estable, los rasters llegaron por las herramientas oficiales. Leerlos exigió rasterio.</p>
+      <div class="assertions">
+        <article><span>Entrada</span><b>GeoTIFF</b></article><i>→</i>
+        <article><span>Motor</span><b>rasterio</b></article><i>→</i>
+        <article><span>Salida</span><b>CSV.GZ · Parquet</b></article>
+      </div>
+      <div class="attr-grid">
+        <article><b>19 · Cultivo anual</b><span>Cada píxel se exporta con sus coordenadas x, y y clase_id.</span></article>
+        <article><b>21 · Mosaico agropecuario</b><span>La clase intermedia que mezcla cultivos y pastizales.</span></article>
+        <article><b>36 · Cultivo perenne</b><span>Frutales y plantaciones de ciclo largo.</span></article>
+      </div>
+    </section>
+
+    <section id="reto-fuente" class="slide territory-slide">
+      <div class="section-number light">Reto 04 · Cambio de fuente</div>
+      <h2>Open-Meteo no llegó al histórico</h2>
+      <p class="lead">La primera opción para el clima era Open-Meteo, pero las limitaciones de la API hicieron inviable extraer el histórico agrícola. Se evaluaron cuatro alternativas antes de decidir.</p>
+      <div class="attr-grid">
+        <article><b>ClimateHighRes</b><span>Bases estáticas de alta resolución; descargables, pero sin una API histórica unificada.</span></article>
+        <article><b>Estaciones CONAGUA</b><span>Red meteorológica nacional; cobertura irregular y huecos en el registro.</span></article>
+        <article><b>WeatherAPI</b><span>API comercial; el histórico completo exigía un plan de pago.</span></article>
+        <article><b>NASA POWER · elegida</b><span>POWER Daily API: diario desde 1981 (MERRA-2), sin clave, con reintentos y caché.</span></article>
+      </div>
+    </section>
+
+    <section id="siguientes" class="slide final">
+      <div class="section-number light">09 · Siguientes pasos</div>
+      <div class="split">
+        <div>
+          <h2>La introducción es solo el primer capítulo</h2>
+          <p class="lead">El proyecto continúa con la descarga programática de cada fuente, la integración de los tres bloques en un solo dataset y el análisis exploratorio que busca escenarios de redistribución.</p>
+        </div>
+        <div class="deck-links">
+          <a class="deck-link" href="../descarga_programatica/index.html"><small>Adquisición</small><b>Del portal al dato</b><span>Técnicas y decisiones de descarga reproducible por fuente.</span><i>→</i></a>
+          <a class="deck-link" href="../integracion_analisis/index.html"><small>Integración + EDA</small><b>De fuentes a evidencia</b><span>Limpieza, unión de clima y suelo, y exploración del dataset.</span><i>→</i></a>
+          <a class="deck-link" href="../storytelling/index.html"><small>Resultados</small><b>Sembrar donde florece</b><span>Modelos, redistribución por ciclos e impacto estimado.</span><i>→</i></a>
+        </div>
+      </div>
+      <footer><span>Producción agrícola en México · Proyecto Agronomía</span><span>2026</span></footer>
+    </section>
+  </main>
+  <div class="keyboard-hint">← → para navegar</div>
+  <script src="app.js"></script>
+</body>
+</html>

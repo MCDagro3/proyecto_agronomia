@@ -3,7 +3,7 @@
 import geopandas as gpd
 import pandas as pd
 
-from proyecto_agronomia.datasets.edafologia import GRUPOS_SUELO_WRB
+from datasets.edafologia import GRUPOS_SUELO_WRB
 
 
 VALORES_SIN_CLASIFICACION = {"", "N", "N/A", "NA"}
