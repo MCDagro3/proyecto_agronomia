@@ -13,8 +13,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.pipeline import Pipeline
 import typer
 
-from proyecto_agronomia.modeling.data import preparar_datos_cultivo, separar_xy
-from proyecto_agronomia.modeling.registry import guardar_modelo
+from modeling.data import preparar_datos_cultivo, separar_xy
+from modeling.registry import guardar_modelo
 
 
 def _modelo_con_log(modelo) -> TransformedTargetRegressor:

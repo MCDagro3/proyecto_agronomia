@@ -9,10 +9,10 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder
 
-from proyecto_agronomia.modeling.cultivos import (
+from modeling.cultivos import (
     VARIABLES_CATEGORICAS, VARIABLES_NUMERICAS, separar_xy,
 )
-from proyecto_agronomia.modeling.train import calcular_metricas
+from modeling.train import calcular_metricas
 
 
 def crear_preprocesador_original() -> ColumnTransformer:

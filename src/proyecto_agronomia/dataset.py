@@ -4,23 +4,23 @@ from loguru import logger
 import typer
 
 from proyecto_agronomia.config import ANIOS
-from proyecto_agronomia.datasets.agricultura import (
+from datasets.agricultura import (
     descargar_datos_agricolas,
     descargar_diccionario_agricola,
     descargar_reporte_agroprograma,
     descargar_reporte_avance,
 )
-from proyecto_agronomia.datasets.edafologia import (
+from datasets.edafologia import (
     descargar_diccionario_edafologia,
     descargar_edafologia_inegi,
 )
-from proyecto_agronomia.datasets.inegi import (
+from datasets.inegi import (
     SERIES_USO_SUELO,
     descargar_series_uso_suelo,
     obtener_estados_inegi,
     obtener_municipios_inegi,
 )
-from proyecto_agronomia.datasets.mapbiomas import procesar_directorio_mapbiomas
+from datasets.mapbiomas import procesar_directorio_mapbiomas
 
 
 app = typer.Typer(help="Adquisición de datos del proyecto de agronomía.")

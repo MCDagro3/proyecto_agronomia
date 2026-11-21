@@ -13,7 +13,7 @@ import pandas as pd
 from scipy.stats import chi2_contingency
 
 from proyecto_agronomia.config import FIGURES_DIR
-from proyecto_agronomia.datasets.edafologia import GRUPOS_SUELO_WRB
+from datasets.edafologia import GRUPOS_SUELO_WRB
 
 
 COLUMNAS_AGRICOLAS = {

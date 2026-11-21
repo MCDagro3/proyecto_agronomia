@@ -14,7 +14,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from proyecto_agronomia.config import INTERIM_DATA_DIR, PROCESSED_DATA_DIR
+from src.proyecto_agronomia.config import INTERIM_DATA_DIR, PROCESSED_DATA_DIR
 
 
 RUTA_DATOS_INTEGRADOS = (

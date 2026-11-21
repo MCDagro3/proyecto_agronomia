@@ -11,13 +11,13 @@ from scipy.optimize import linprog
 from scipy.sparse import coo_matrix
 
 from proyecto_agronomia.config import MODELS_DIR
-from proyecto_agronomia.modeling.cultivos import (
+from modeling.cultivos import (
     VARIABLES_CATEGORICAS,
     VARIABLES_NUMERICAS,
     preparar_cultivo,
     separar_xy,
 )
-from proyecto_agronomia.modeling.registry import cargar_modelo, ruta_version_modelo
+from modeling.registry import cargar_modelo, ruta_version_modelo
 
 CLAVES_BLOQUE = ["cvegeo", "Nomcicloproductivo", "Nommodalidad"]
 
