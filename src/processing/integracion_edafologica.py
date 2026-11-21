@@ -5,7 +5,6 @@ import pandas as pd
 
 from datasets.edafologia import GRUPOS_SUELO_WRB
 
-
 VALORES_SIN_CLASIFICACION = {"", "N", "N/A", "NA"}
 
 
@@ -17,15 +16,10 @@ def _categoria_dominante_por_superficie(
 ) -> pd.DataFrame:
     datos = intersecciones[["cvegeo", columna, "area_interseccion_m2"]].copy()
     datos[columna] = datos[columna].astype("string").str.strip()
-    datos = datos.loc[
-        datos[columna].notna()
-        & ~datos[columna].isin(VALORES_SIN_CLASIFICACION)
-    ]
-    superficies = (
-        datos.groupby(["cvegeo", columna], as_index=False, observed=True)[
-            "area_interseccion_m2"
-        ].sum()
-    )
+    datos = datos.loc[datos[columna].notna() & ~datos[columna].isin(VALORES_SIN_CLASIFICACION)]
+    superficies = datos.groupby(["cvegeo", columna], as_index=False, observed=True)[
+        "area_interseccion_m2"
+    ].sum()
     dominante = (
         superficies.sort_values(
             ["cvegeo", "area_interseccion_m2", columna],
@@ -35,9 +29,7 @@ def _categoria_dominante_por_superficie(
         .rename(columns={columna: nombre_salida})
     )
     dominante[f"{nombre_salida}_pct"] = (
-        dominante["area_interseccion_m2"]
-        / dominante["cvegeo"].map(areas_municipales)
-        * 100
+        dominante["area_interseccion_m2"] / dominante["cvegeo"].map(areas_municipales) * 100
     ).round(2)
     return dominante.drop(columns="area_interseccion_m2")
 
@@ -56,10 +48,7 @@ def _composicion_por_superficie(
     """
     datos = intersecciones[["cvegeo", columna, "area_interseccion_m2"]].copy()
     datos[columna] = datos[columna].astype("string").str.strip()
-    datos = datos.loc[
-        datos[columna].notna()
-        & ~datos[columna].isin(VALORES_SIN_CLASIFICACION)
-    ]
+    datos = datos.loc[datos[columna].notna() & ~datos[columna].isin(VALORES_SIN_CLASIFICACION)]
     composicion = datos.pivot_table(
         index="cvegeo",
         columns=columna,
@@ -68,10 +57,9 @@ def _composicion_por_superficie(
         fill_value=0.0,
         observed=True,
     )
-    composicion = (
-        composicion.div(composicion.index.map(areas_municipales), axis=0)
-        * 100
-    ).round(2)
+    composicion = (composicion.div(composicion.index.map(areas_municipales), axis=0) * 100).round(
+        2
+    )
     composicion = composicion[sorted(composicion.columns)]
     composicion.columns = [f"{prefijo}{grupo}" for grupo in composicion.columns]
     composicion.columns.name = None
@@ -94,9 +82,7 @@ def resumir_edafologia_municipal(
         raise ValueError("Ambas capas deben tener CRS definido.")
 
     municipios_area = municipios[["cvegeo", "geometry"]].copy()
-    municipios_area["cvegeo"] = (
-        municipios_area["cvegeo"].astype("string").str.zfill(5)
-    )
+    municipios_area["cvegeo"] = municipios_area["cvegeo"].astype("string").str.zfill(5)
     if municipios_area["cvegeo"].duplicated().any():
         raise ValueError("La capa municipal contiene cvegeo duplicadas.")
     municipios_area = municipios_area.to_crs(crs_areas)
@@ -109,9 +95,7 @@ def resumir_edafologia_municipal(
         keep_geom_type=False,
     )
     intersecciones["area_interseccion_m2"] = intersecciones.geometry.area
-    intersecciones = intersecciones.loc[
-        intersecciones["area_interseccion_m2"].gt(0)
-    ]
+    intersecciones = intersecciones.loc[intersecciones["area_interseccion_m2"].gt(0)]
 
     resultado = municipios_area[["cvegeo"]].copy()
     configuracion = {
@@ -122,36 +106,22 @@ def resumir_edafologia_municipal(
         resumen = _categoria_dominante_por_superficie(
             intersecciones, columna, salida, areas_municipales
         )
-        resultado = resultado.merge(
-            resumen, on="cvegeo", how="left", validate="one_to_one"
-        )
+        resultado = resultado.merge(resumen, on="cvegeo", how="left", validate="one_to_one")
 
     grupos = intersecciones[["cvegeo", "Grupo1"]].copy()
     grupos["Grupo1"] = grupos["Grupo1"].astype("string").str.strip()
     grupos = grupos.loc[
-        grupos["Grupo1"].notna()
-        & ~grupos["Grupo1"].isin(VALORES_SIN_CLASIFICACION)
+        grupos["Grupo1"].notna() & ~grupos["Grupo1"].isin(VALORES_SIN_CLASIFICACION)
     ]
     diversidad = (
-        grupos.groupby("cvegeo")["Grupo1"]
-        .nunique()
-        .rename("grupos_suelo_n")
-        .reset_index()
+        grupos.groupby("cvegeo")["Grupo1"].nunique().rename("grupos_suelo_n").reset_index()
     )
-    resultado = resultado.merge(
-        diversidad, on="cvegeo", how="left", validate="one_to_one"
-    )
+    resultado = resultado.merge(diversidad, on="cvegeo", how="left", validate="one_to_one")
     composicion = _composicion_por_superficie(intersecciones, areas_municipales)
-    resultado = resultado.merge(
-        composicion, on="cvegeo", how="left", validate="one_to_one"
-    )
-    columnas_composicion = [
-        columna for columna in composicion.columns if columna != "cvegeo"
-    ]
+    resultado = resultado.merge(composicion, on="cvegeo", how="left", validate="one_to_one")
+    columnas_composicion = [columna for columna in composicion.columns if columna != "cvegeo"]
     resultado[columnas_composicion] = resultado[columnas_composicion].fillna(0.0)
-    resultado["nombre_suelo_wrb"] = resultado["grupo_suelo_dominante"].map(
-        GRUPOS_SUELO_WRB
-    )
+    resultado["nombre_suelo_wrb"] = resultado["grupo_suelo_dominante"].map(GRUPOS_SUELO_WRB)
     if resultado["cvegeo"].duplicated().any():
         raise AssertionError("El resumen edafológico produjo municipios duplicados.")
     return pd.DataFrame(resultado.drop(columns="geometry", errors="ignore"))

@@ -1,17 +1,17 @@
 from pathlib import Path
 
-import pandas as pd
-import typer
-from loguru import logger
-from tqdm import tqdm
 import geopandas as gpd
+from loguru import logger
+import pandas as pd
+from tqdm import tqdm
+import typer
 
 from proyecto_agronomia.config import (
     AGRICULTURA_RAW_DIR,
     ANIOS,
+    INEGI_INTERIM_DIR,
     INTERIM_DATA_DIR,
     PROCESSED_DATA_DIR,
-    INEGI_INTERIM_DIR
 )
 
 app = typer.Typer()
@@ -71,9 +71,7 @@ def normalizar_columnas_agricolas(df: pd.DataFrame, anio: int) -> pd.DataFrame:
         )
         if "Preciomediorural" in df.columns:
             precio_medio = pd.to_numeric(
-                df["Preciomediorural"]
-                .astype("string")
-                .str.replace(",", "", regex=False),
+                df["Preciomediorural"].astype("string").str.replace(",", "", regex=False),
                 errors="coerce",
             )
             df["Preciomediorural"] = precio_medio.combine_first(precio)
@@ -101,9 +99,7 @@ def convertir_columnas_numericas(
 
     for columna in COLUMNAS_NUMERICAS:
         if columna not in df.columns:
-            logger.warning(
-                f"[{anio}] No se encontró la columna '{columna}'."
-            )
+            logger.warning(f"[{anio}] No se encontró la columna '{columna}'.")
             continue
 
         df[columna] = (
@@ -160,31 +156,23 @@ def construir_historico_agricola(
         ruta = directorio / f"agricola_{anio}.csv"
 
         if not ruta.exists():
-            logger.warning(
-                f"[{anio}] No existe {ruta.name}. Se omitirá."
-            )
+            logger.warning(f"[{anio}] No existe {ruta.name}. Se omitirá.")
             continue
 
         try:
             df_anio = cargar_archivo_agricola(ruta, anio)
             df_anio["Anio"] = anio
 
-        except Exception as error:
-            logger.error(
-                f"[{anio}] Error procesando {ruta.name}: {error}"
-            )
+        except Exception as error:  # noqa: BLE001 - se omite el año y se continúa con el siguiente
+            logger.error(f"[{anio}] Error procesando {ruta.name}: {error}")
             continue
 
         dataframes.append(df_anio)
 
-        logger.info(
-            f"[{anio}] {len(df_anio):,} registros procesados."
-        )
+        logger.info(f"[{anio}] {len(df_anio):,} registros procesados.")
 
     if not dataframes:
-        raise FileNotFoundError(
-            "No se encontraron archivos agrícolas para procesar."
-        )
+        raise FileNotFoundError("No se encontraron archivos agrícolas para procesar.")
 
     historico = pd.concat(
         dataframes,
@@ -192,6 +180,7 @@ def construir_historico_agricola(
     )
 
     return historico
+
 
 def generar_features_agricolas(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -217,8 +206,7 @@ def generar_features_agricolas(df: pd.DataFrame) -> pd.DataFrame:
     mascara_valida = df["Sembrada"] > 0
 
     df.loc[mascara_valida, "TasaCosecha"] = (
-        df.loc[mascara_valida, "Cosechada"]
-        / df.loc[mascara_valida, "Sembrada"]
+        df.loc[mascara_valida, "Cosechada"] / df.loc[mascara_valida, "Sembrada"]
     )
 
     df["TasaCosecha"] = pd.to_numeric(
@@ -229,16 +217,12 @@ def generar_features_agricolas(df: pd.DataFrame) -> pd.DataFrame:
     # Indicadores de calidad de datos
     df["FlagSembradaCero"] = df["Sembrada"] == 0
 
-    df["FlagCosechadaMayorSembrada"] = (
-        df["Cosechada"] > df["Sembrada"]
-    )
+    df["FlagCosechadaMayorSembrada"] = df["Cosechada"] > df["Sembrada"]
 
-    df["FlagBalanceSuperficie"] = (
-        df["Cosechada"] + df["Siniestrada"]
-        > df["Sembrada"]
-    )
+    df["FlagBalanceSuperficie"] = df["Cosechada"] + df["Siniestrada"] > df["Sembrada"]
 
     return df
+
 
 def generar_coordenadas_municipios(
     municipios_geo: gpd.GeoDataFrame,
@@ -254,16 +238,10 @@ def generar_coordenadas_municipios(
     municipios_geo = municipios_geo.copy()
 
     # Proyectar geometrías para realizar operaciones espaciales
-    municipios_proyectados = municipios_geo.to_crs(
-        epsg=6372
-    )
+    municipios_proyectados = municipios_geo.to_crs(epsg=6372)
 
     # Obtener un punto garantizado dentro de cada municipio
-    puntos_representativos = (
-        municipios_proyectados
-        .geometry
-        .representative_point()
-    )
+    puntos_representativos = municipios_proyectados.geometry.representative_point()
 
     # Regresar los puntos a coordenadas geográficas WGS84
     puntos_geo = gpd.GeoSeries(
@@ -275,7 +253,7 @@ def generar_coordenadas_municipios(
     municipios_geo["Longitud"] = puntos_geo.x
     municipios_geo["Latitud"] = puntos_geo.y
 
-        # Crear dataset tabular compatible con las claves agrícolas
+    # Crear dataset tabular compatible con las claves agrícolas
     municipios_coordenadas = municipios_geo[
         [
             "cve_ent",
@@ -296,60 +274,37 @@ def generar_coordenadas_municipios(
     )
 
     # Las claves agrícolas utilizan valores enteros
-    municipios_coordenadas["Idestado"] = (
-        municipios_coordenadas["Idestado"].astype(int)
-    )
+    municipios_coordenadas["Idestado"] = municipios_coordenadas["Idestado"].astype(int)
 
-    municipios_coordenadas["Idmunicipio"] = (
-        municipios_coordenadas["Idmunicipio"].astype(int)
-    )
+    municipios_coordenadas["Idmunicipio"] = municipios_coordenadas["Idmunicipio"].astype(int)
 
     return municipios_coordenadas
 
+
 def guardar_coordenadas_municipios(
     municipios_geo: gpd.GeoDataFrame,
-    output_path: Path = (
-        INEGI_INTERIM_DIR / "municipios_coordenadas_inegi.csv"
-    ),
+    output_path: Path = (INEGI_INTERIM_DIR / "municipios_coordenadas_inegi.csv"),
 ) -> pd.DataFrame:
     """
     Genera, valida y guarda las coordenadas representativas
     de los municipios de INEGI.
     """
 
-    coordenadas = generar_coordenadas_municipios(
-        municipios_geo
-    )
+    coordenadas = generar_coordenadas_municipios(municipios_geo)
 
-    duplicados = coordenadas.duplicated(
-        subset=["Idestado", "Idmunicipio"]
-    ).sum()
+    duplicados = coordenadas.duplicated(subset=["Idestado", "Idmunicipio"]).sum()
 
-    latitudes_faltantes = (
-        coordenadas["Latitud"].isna().sum()
-    )
+    latitudes_faltantes = coordenadas["Latitud"].isna().sum()
 
-    longitudes_faltantes = (
-        coordenadas["Longitud"].isna().sum()
-    )
+    longitudes_faltantes = coordenadas["Longitud"].isna().sum()
+
+    logger.info(f"Municipios: {len(coordenadas):,}")
+    logger.info(f"Claves duplicadas: {duplicados:,}")
+    logger.info(f"Latitudes faltantes: {latitudes_faltantes:,}")
+    logger.info(f"Longitudes faltantes: {longitudes_faltantes:,}")
 
     logger.info(
-        f"Municipios: {len(coordenadas):,}"
-    )
-    logger.info(
-        f"Claves duplicadas: {duplicados:,}"
-    )
-    logger.info(
-        f"Latitudes faltantes: {latitudes_faltantes:,}"
-    )
-    logger.info(
-        f"Longitudes faltantes: {longitudes_faltantes:,}"
-    )
-
-    logger.info(
-        f"Rango latitud: "
-        f"{coordenadas['Latitud'].min():.6f} → "
-        f"{coordenadas['Latitud'].max():.6f}"
+        f"Rango latitud: {coordenadas['Latitud'].min():.6f} → {coordenadas['Latitud'].max():.6f}"
     )
 
     logger.info(
@@ -369,11 +324,10 @@ def guardar_coordenadas_municipios(
         encoding="utf-8-sig",
     )
 
-    logger.success(
-        f"Coordenadas municipales guardadas en {output_path}"
-    )
+    logger.success(f"Coordenadas municipales guardadas en {output_path}")
 
     return coordenadas
+
 
 def obtener_municipios_agricolas(
     anios: list[int] = ANIOS,
@@ -390,9 +344,7 @@ def obtener_municipios_agricolas(
         archivo = directorio / f"agricola_{anio}.csv"
 
         if not archivo.exists():
-            logger.warning(
-                f"No se encontró el archivo agrícola de {anio}: {archivo}"
-            )
+            logger.warning(f"No se encontró el archivo agrícola de {anio}: {archivo}")
             continue
 
         df_temp = pd.read_csv(
@@ -417,27 +369,21 @@ def obtener_municipios_agricolas(
         )
 
     if not municipios_agricolas:
-        raise FileNotFoundError(
-            "No se encontraron archivos agrícolas para obtener municipios."
-        )
+        raise FileNotFoundError("No se encontraron archivos agrícolas para obtener municipios.")
 
     municipios_agricolas = (
         pd.concat(
             municipios_agricolas,
             ignore_index=True,
         )
-        .drop_duplicates(
-            subset=["Idestado", "Idmunicipio"]
-        )
+        .drop_duplicates(subset=["Idestado", "Idmunicipio"])
         .reset_index(drop=True)
     )
 
-    logger.info(
-        f"Municipios con actividad agrícola: "
-        f"{len(municipios_agricolas):,}"
-    )
+    logger.info(f"Municipios con actividad agrícola: {len(municipios_agricolas):,}")
 
     return municipios_agricolas
+
 
 def preparar_municipios_clima(
     municipios_agricolas: pd.DataFrame,
@@ -465,19 +411,15 @@ def preparar_municipios_clima(
     )
 
     sin_coordenadas = (
-        municipios_clima["Latitud"].isna()
-        | municipios_clima["Longitud"].isna()
+        municipios_clima["Latitud"].isna() | municipios_clima["Longitud"].isna()
     ).sum()
 
-    logger.info(
-        f"Municipios agrícolas: {len(municipios_clima):,}"
-    )
+    logger.info(f"Municipios agrícolas: {len(municipios_clima):,}")
 
-    logger.info(
-        f"Municipios sin coordenadas: {sin_coordenadas:,}"
-    )
+    logger.info(f"Municipios sin coordenadas: {sin_coordenadas:,}")
 
     return municipios_clima
+
 
 @app.command()
 def main(
@@ -491,26 +433,18 @@ def main(
     logger.info(f"Leyendo dataset histórico desde {input_path}")
 
     if not input_path.exists():
-        raise FileNotFoundError(
-            f"No se encontró el dataset histórico: {input_path}"
-        )
+        raise FileNotFoundError(f"No se encontró el dataset histórico: {input_path}")
 
     df = pd.read_csv(
         input_path,
         low_memory=False,
     )
 
-    logger.info(
-        f"Dataset cargado: {df.shape[0]:,} filas x "
-        f"{df.shape[1]} columnas."
-    )
+    logger.info(f"Dataset cargado: {df.shape[0]:,} filas x {df.shape[1]} columnas.")
 
     df = generar_features_agricolas(df)
 
-    logger.info(
-        f"Features generadas: {df.shape[0]:,} filas x "
-        f"{df.shape[1]} columnas."
-    )
+    logger.info(f"Features generadas: {df.shape[0]:,} filas x {df.shape[1]} columnas.")
 
     output_path.parent.mkdir(
         parents=True,
@@ -523,9 +457,8 @@ def main(
         encoding="utf-8",
     )
 
-    logger.success(
-        f"Dataset procesado guardado en {output_path}"
-    )
+    logger.success(f"Dataset procesado guardado en {output_path}")
+
 
 if __name__ == "__main__":
     app()

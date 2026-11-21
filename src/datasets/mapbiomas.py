@@ -11,7 +11,6 @@ from proyecto_agronomia.config import (
     MAPBIOMAS_RAW_DIR,
 )
 
-
 CLASES_AGRICOLAS_MAPBIOMAS = {
     19: "Cultivo anual",
     36: "Cultivo perenne",
@@ -44,9 +43,7 @@ def extraer_pixeles_agricolas_mapbiomas(
         matriz = raster.read(1)
         mascara = np.isin(matriz, list(clases))
         filas, columnas = np.nonzero(mascara)
-        coordenadas_x, coordenadas_y = rasterio.transform.xy(
-            raster.transform, filas, columnas
-        )
+        coordenadas_x, coordenadas_y = rasterio.transform.xy(raster.transform, filas, columnas)
         resultado = pd.DataFrame(
             {
                 "x": coordenadas_x,
@@ -62,7 +59,7 @@ def extraer_pixeles_agricolas_mapbiomas(
         ruta_salida = Path(ruta_salida)
         ruta_salida.parent.mkdir(parents=True, exist_ok=True)
         sufijos = "".join(ruta_salida.suffixes).lower()
-        if sufijos.endswith(".csv") or sufijos.endswith(".csv.gz"):
+        if sufijos.endswith((".csv", ".csv.gz")):
             resultado.to_csv(ruta_salida, index=False)
         elif sufijos.endswith(".parquet"):
             resultado.to_parquet(ruta_salida, index=False)
@@ -82,9 +79,7 @@ def procesar_directorio_mapbiomas(
         raise FileNotFoundError(f"No existe el directorio: {directorio_entrada}")
     directorio_salida.mkdir(parents=True, exist_ok=True)
     salidas: list[Path] = []
-    for raster in sorted(
-        [*directorio_entrada.glob("*.tif"), *directorio_entrada.glob("*.tiff")]
-    ):
+    for raster in sorted([*directorio_entrada.glob("*.tif"), *directorio_entrada.glob("*.tiff")]):
         anio = raster.stem.split("_")[0]
         salida = directorio_salida / f"agricultura_mapbiomas_{anio}.csv.gz"
         if salida.exists():

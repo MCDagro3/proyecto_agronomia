@@ -1,8 +1,8 @@
 from pathlib import Path
 import zipfile
 
-import requests
 from loguru import logger
+import requests
 
 from proyecto_agronomia.config import (
     EDAFOLOGIA_DICCIONARIO_PATH,
@@ -12,16 +12,41 @@ from proyecto_agronomia.config import (
 )
 
 GRUPOS_SUELO_WRB = {
-    "AC": "Acrisol", "AL": "Alisol", "AN": "Andosol", "AT": "Anthrosol",
+    "AC": "Acrisol",
+    "AL": "Alisol",
+    "AN": "Andosol",
+    "AT": "Anthrosol",
     "SA": "Suelo cubierto por agua",
-    "AR": "Arenosol", "CL": "Calcisol", "CM": "Cambisol", "CH": "Chernozem",
-    "CR": "Cryosol", "DU": "Durisol", "FR": "Ferralsol", "FL": "Fluvisol",
-    "GL": "Gleysol", "GY": "Gypsisol", "HS": "Histosol", "KS": "Kastanozem",
-    "LP": "Leptosol", "LX": "Lixisol", "LV": "Luvisol", "NT": "Nitisol",
-    "PH": "Phaeozem", "PL": "Planosol", "PT": "Plinthosol", "PZ": "Podzol",
-    "RG": "Regosol", "RT": "Retisol", "SC": "Solonchak", "SN": "Solonetz",
-    "ST": "Stagnosol", "TC": "Technosol", "UM": "Umbrisol", "VR": "Vertisol",
+    "AR": "Arenosol",
+    "CL": "Calcisol",
+    "CM": "Cambisol",
+    "CH": "Chernozem",
+    "CR": "Cryosol",
+    "DU": "Durisol",
+    "FR": "Ferralsol",
+    "FL": "Fluvisol",
+    "GL": "Gleysol",
+    "GY": "Gypsisol",
+    "HS": "Histosol",
+    "KS": "Kastanozem",
+    "LP": "Leptosol",
+    "LX": "Lixisol",
+    "LV": "Luvisol",
+    "NT": "Nitisol",
+    "PH": "Phaeozem",
+    "PL": "Planosol",
+    "PT": "Plinthosol",
+    "PZ": "Podzol",
+    "RG": "Regosol",
+    "RT": "Retisol",
+    "SC": "Solonchak",
+    "SN": "Solonetz",
+    "ST": "Stagnosol",
+    "TC": "Technosol",
+    "UM": "Umbrisol",
+    "VR": "Vertisol",
 }
+
 
 def descargar_edafologia_inegi(
     directorio: Path = EDAFOLOGIA_RAW_DIR,
@@ -49,20 +74,12 @@ def descargar_edafologia_inegi(
         exist_ok=True,
     )
 
-    ruta_zip = (
-        directorio
-        / "edafologia_serie_iii_inegi.zip"
-    )
+    ruta_zip = directorio / "edafologia_serie_iii_inegi.zip"
 
-    directorio_extraido = (
-        directorio
-        / "serie_iii"
-    )
+    directorio_extraido = directorio / "serie_iii"
 
     if not ruta_zip.exists():
-        logger.info(
-            "Descargando información edafológica de INEGI..."
-        )
+        logger.info("Descargando información edafológica de INEGI...")
 
         try:
             respuesta = requests.get(
@@ -74,37 +91,26 @@ def descargar_edafologia_inegi(
             respuesta.raise_for_status()
 
             with ruta_zip.open("wb") as archivo:
-                for bloque in respuesta.iter_content(
-                    chunk_size=1024 * 1024
-                ):
+                for bloque in respuesta.iter_content(chunk_size=1024 * 1024):
                     if bloque:
                         archivo.write(bloque)
 
         except requests.RequestException as error:
-            logger.error(
-                f"Error descargando edafología: {error}"
-            )
+            logger.error(f"Error descargando edafología: {error}")
             raise
 
         logger.success(
-            "Archivo edafológico descargado "
-            f"({ruta_zip.stat().st_size / (1024**2):.2f} MB)"
+            f"Archivo edafológico descargado ({ruta_zip.stat().st_size / (1024**2):.2f} MB)"
         )
 
     else:
-        logger.info(
-            "El archivo edafológico ya existe."
-        )
+        logger.info("El archivo edafológico ya existe.")
 
     if directorio_extraido.exists():
-        logger.info(
-            "Los datos edafológicos ya fueron extraídos."
-        )
+        logger.info("Los datos edafológicos ya fueron extraídos.")
         return directorio_extraido
 
-    logger.info(
-        "Extrayendo información edafológica..."
-    )
+    logger.info("Extrayendo información edafológica...")
 
     directorio_extraido.mkdir(
         parents=True,
@@ -115,15 +121,12 @@ def descargar_edafologia_inegi(
         ruta_zip,
         "r",
     ) as archivo_zip:
-        archivo_zip.extractall(
-            directorio_extraido
-        )
+        archivo_zip.extractall(directorio_extraido)
 
-    logger.success(
-        "Información edafológica extraída."
-    )
+    logger.success("Información edafológica extraída.")
 
     return directorio_extraido
+
 
 def descargar_diccionario_edafologia(
     ruta: Path = EDAFOLOGIA_DICCIONARIO_PATH,
@@ -152,14 +155,10 @@ def descargar_diccionario_edafologia(
     )
 
     if ruta.exists():
-        logger.info(
-            "El diccionario edafológico ya existe."
-        )
+        logger.info("El diccionario edafológico ya existe.")
         return ruta
 
-    logger.info(
-        "Descargando diccionario edafológico de INEGI..."
-    )
+    logger.info("Descargando diccionario edafológico de INEGI...")
 
     try:
         respuesta = requests.get(
@@ -169,20 +168,12 @@ def descargar_diccionario_edafologia(
 
         respuesta.raise_for_status()
 
-        ruta.write_bytes(
-            respuesta.content
-        )
+        ruta.write_bytes(respuesta.content)
 
     except requests.RequestException as error:
-        logger.error(
-            "Error descargando el diccionario "
-            f"edafológico: {error}"
-        )
+        logger.error(f"Error descargando el diccionario edafológico: {error}")
         raise
 
-    logger.success(
-        "Diccionario edafológico descargado: "
-        f"{ruta.name}"
-    )
+    logger.success(f"Diccionario edafológico descargado: {ruta.name}")
 
     return ruta

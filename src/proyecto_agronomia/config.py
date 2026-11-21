@@ -64,36 +64,22 @@ AGRICULTURA_URL_TEMPLATE = (
 )
 
 AGRICULTURA_DICCIONARIO_URL = (
-    "https://nube.agricultura.gob.mx/"
-    "index.php?view=5D24F995-E734D711-1EA6F8D2-9D1387D7"
+    "https://nube.agricultura.gob.mx/index.php?view=5D24F995-E734D711-1EA6F8D2-9D1387D7"
 )
 
-AGRICULTURA_DICCIONARIO_PATH = (
-    REFERENCES_DIR
-    / "diccionario_datos_agricultura_dgsiap.xlsx"
-)
+AGRICULTURA_DICCIONARIO_PATH = REFERENCES_DIR / "diccionario_datos_agricultura_dgsiap.xlsx"
 
-DGSIAP_DATOS_ABIERTOS_URL = (
-    "https://nube.agricultura.gob.mx/datosAbiertos/Agricola.php"
-)
+DGSIAP_DATOS_ABIERTOS_URL = "https://nube.agricultura.gob.mx/datosAbiertos/Agricola.php"
 DGSIAP_DESCARGA_BASE_URL = "https://nube.agricultura.gob.mx/index.php"
 DGSIAP_AVANCE_URL = "https://nube.agricultura.gob.mx/avance_agricola/"
 DGSIAP_AGROPROGRAMA_URL = "https://nube.agricultura.gob.mx/agroprograma/"
 
-INEGI_MUNICIPIOS_URL_TEMPLATE = (
-    "https://gaia.inegi.org.mx/"
-    "wscatgeo/v2/geo/mgem/{clave_estado}"
-)
+INEGI_MUNICIPIOS_URL_TEMPLATE = "https://gaia.inegi.org.mx/wscatgeo/v2/geo/mgem/{clave_estado}"
 
-INEGI_ESTADOS_URL_TEMPLATE = (
-    "https://gaia.inegi.org.mx/"
-    "wscatgeo/v2/geo/mgee/{clave_estado}"
-)
+INEGI_ESTADOS_URL_TEMPLATE = "https://gaia.inegi.org.mx/wscatgeo/v2/geo/mgee/{clave_estado}"
 
 INEGI_MAPAS_HOST = "https://www.inegi.org.mx"
-INEGI_MAPAS_API_URL = (
-    f"{INEGI_MAPAS_HOST}/app/api/productos/interna_v2/mapas"
-)
+INEGI_MAPAS_API_URL = f"{INEGI_MAPAS_HOST}/app/api/productos/interna_v2/mapas"
 
 EDAFOLOGIA_URL = (
     "https://www.inegi.org.mx/contenidos/productos/"
@@ -109,8 +95,7 @@ EDAFOLOGIA_DICCIONARIO_URL = (
 )
 
 EDAFOLOGIA_DICCIONARIO_PATH = (
-    EDAFOLOGIA_REFERENCES_DIR
-    / "diccionario_datos_edafologicos_250k_v4.pdf"
+    EDAFOLOGIA_REFERENCES_DIR / "diccionario_datos_edafologicos_250k_v4.pdf"
 )
 
 # ============================================================
@@ -118,9 +103,7 @@ EDAFOLOGIA_DICCIONARIO_PATH = (
 # ============================================================
 
 # API oficial de NASA POWER
-NASA_POWER_URL = (
-    "https://power.larc.nasa.gov/api/temporal/daily/point"
-)
+NASA_POWER_URL = "https://power.larc.nasa.gov/api/temporal/daily/point"
 
 # Directorios de almacenamiento
 NASA_POWER_RAW_DIR = RAW_DATA_DIR / "clima_nasa"
@@ -132,14 +115,14 @@ NASA_POWER_ANIO_FINAL = ANIO_FINAL
 
 # Parámetros meteorológicos
 NASA_POWER_PARAMETROS = [
-    "T2M",          # Temperatura media a 2 metros (°C)
+    "T2M",  # Temperatura media a 2 metros (°C)
     "PRECTOTCORR",  # Precipitación corregida (mm/día)
 ]
 
 # Configuración de las solicitudes
 NASA_POWER_COMMUNITY = "AG"  # ¿Que es "AG"?
-NASA_POWER_FORMAT = "JSON"   # Extrae la información en formato JSON.
-NASA_POWER_TIMEOUT = 120     # Tiempo de espera a la API de la NASA.
+NASA_POWER_FORMAT = "JSON"  # Extrae la información en formato JSON.
+NASA_POWER_TIMEOUT = 120  # Tiempo de espera a la API de la NASA.
 
 # Control de solicitudes para evitar errores HTTP 429
 NASA_POWER_PAUSA = 3

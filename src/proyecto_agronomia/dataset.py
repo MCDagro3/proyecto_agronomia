@@ -3,7 +3,6 @@
 from loguru import logger
 import typer
 
-from proyecto_agronomia.config import ANIOS
 from datasets.agricultura import (
     descargar_datos_agricolas,
     descargar_diccionario_agricola,
@@ -21,7 +20,7 @@ from datasets.inegi import (
     obtener_municipios_inegi,
 )
 from datasets.mapbiomas import procesar_directorio_mapbiomas
-
+from proyecto_agronomia.config import ANIOS
 
 app = typer.Typer(help="Adquisición de datos del proyecto de agronomía.")
 
@@ -41,8 +40,7 @@ def inegi():
     municipios = obtener_municipios_inegi()
     estados = obtener_estados_inegi()
     logger.success(
-        f"INEGI terminado. {len(municipios):,} municipios y "
-        f"{len(estados)} estados disponibles."
+        f"INEGI terminado. {len(municipios):,} municipios y {len(estados)} estados disponibles."
     )
 
 

@@ -3,9 +3,12 @@
 import numpy as np
 import pandas as pd
 
-
 CLAVES_HISTORIA = [
-    "cvegeo", "Nomcultivo", "Nomcicloproductivo", "Nommodalidad", "Nomunidad",
+    "cvegeo",
+    "Nomcultivo",
+    "Nomcicloproductivo",
+    "Nommodalidad",
+    "Nomunidad",
 ]
 COLUMNAS_HISTORICAS = [
     "rendimiento_hist_anios",
@@ -22,7 +25,10 @@ def agregar_historial_rendimiento(
 ) -> pd.DataFrame:
     """Agrega estadisticas que para el año t usan solamente años anteriores."""
     requeridas = {
-        *CLAVES_HISTORIA, "Anio", "Cosechada", "Volumenproduccion",
+        *CLAVES_HISTORIA,
+        "Anio",
+        "Cosechada",
+        "Volumenproduccion",
     }
     faltantes = requeridas - set(datos.columns)
     if faltantes:
@@ -44,12 +50,10 @@ def agregar_historial_rendimiento(
         )
         .sort_values([*CLAVES_HISTORIA, "Anio"])
     )
-    anual["rendimiento_anual"] = (
-        anual["Volumenproduccion"] / anual["Cosechada"]
-    ).where(anual["Cosechada"].gt(0))
-    anual["rendimiento_anual"] = anual["rendimiento_anual"].replace(
-        [np.inf, -np.inf], np.nan
+    anual["rendimiento_anual"] = (anual["Volumenproduccion"] / anual["Cosechada"]).where(
+        anual["Cosechada"].gt(0)
     )
+    anual["rendimiento_anual"] = anual["rendimiento_anual"].replace([np.inf, -np.inf], np.nan)
     grupos = anual.groupby(CLAVES_HISTORIA, observed=True, dropna=False)
     anual["rendimiento_hist_anios"] = grupos.cumcount()
     anual["rendimiento_anio_anterior"] = grupos["rendimiento_anual"].shift(1)

@@ -18,10 +18,12 @@ from modeling.registry import guardar_modelo
 
 
 def _modelo_con_log(modelo) -> TransformedTargetRegressor:
-    pipeline = Pipeline([
-        ("imputar", SimpleImputer(strategy="median")),
-        ("modelo", modelo),
-    ])
+    pipeline = Pipeline(
+        [
+            ("imputar", SimpleImputer(strategy="median")),
+            ("modelo", modelo),
+        ]
+    )
     return TransformedTargetRegressor(
         regressor=pipeline,
         func=np.log1p,
@@ -110,21 +112,21 @@ def comparar_modelos(
         for particion in ["prueba_temporal", "prueba_espaciotemporal"]:
             indices = particiones[particion]
             prediccion = modelo.predict(X.loc[indices])
-            resultados.append({
-                "modelo": nombre,
-                "particion": particion,
-                "registros": len(indices),
-                **calcular_metricas(y.loc[indices], prediccion),
-            })
+            resultados.append(
+                {
+                    "modelo": nombre,
+                    "particion": particion,
+                    "registros": len(indices),
+                    **calcular_metricas(y.loc[indices], prediccion),
+                }
+            )
     return entrenados, pd.DataFrame(resultados)
 
 
 def seleccionar_modelo(metricas: pd.DataFrame) -> str:
     """Elige por RMSE espacio-temporal y usa RMSE temporal como desempate."""
     tabla = metricas.pivot(index="modelo", columns="particion", values="rmse")
-    return str(tabla.sort_values(
-        ["prueba_espaciotemporal", "prueba_temporal"]
-    ).index[0])
+    return str(tabla.sort_values(["prueba_espaciotemporal", "prueba_temporal"]).index[0])
 
 
 def entrenar_modelo_final(modelo_entrenado, datos: pd.DataFrame):

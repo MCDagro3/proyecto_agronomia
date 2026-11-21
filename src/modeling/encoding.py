@@ -14,36 +14,60 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from src.proyecto_agronomia.config import INTERIM_DATA_DIR, PROCESSED_DATA_DIR
+from proyecto_agronomia.config import INTERIM_DATA_DIR, PROCESSED_DATA_DIR
 
-
-RUTA_DATOS_INTEGRADOS = (
-    PROCESSED_DATA_DIR / "agricultura_clima_edafologia_2003_2025.csv"
-)
+RUTA_DATOS_INTEGRADOS = PROCESSED_DATA_DIR / "agricultura_clima_edafologia_2003_2025.csv"
 MODELING_INTERIM_DIR = INTERIM_DATA_DIR / "modeling" / "nacional"
 
 COLUMNAS_IDENTIFICACION = [
-    "cvegeo", "Anio", "Nomestado", "Nommunicipio", "Nomcultivo",
-    "Nomcicloproductivo", "Nommodalidad", "Nomunidad",
+    "cvegeo",
+    "Anio",
+    "Nomestado",
+    "Nommunicipio",
+    "Nomcultivo",
+    "Nomcicloproductivo",
+    "Nommodalidad",
+    "Nomunidad",
 ]
 COLUMNAS_OBJETIVO = [
-    "Sembrada", "Cosechada", "Siniestrada", "Volumenproduccion",
-    "Rendimiento", "Preciomediorural", "Valorproduccion",
+    "Sembrada",
+    "Cosechada",
+    "Siniestrada",
+    "Volumenproduccion",
+    "Rendimiento",
+    "Preciomediorural",
+    "Valorproduccion",
 ]
 
 MESES = (
-    "ene", "feb", "mar", "abr", "may", "jun",
-    "jul", "ago", "sep", "oct", "nov", "dic",
+    "ene",
+    "feb",
+    "mar",
+    "abr",
+    "may",
+    "jun",
+    "jul",
+    "ago",
+    "sep",
+    "oct",
+    "nov",
+    "dic",
 )
 VARIABLES_NUMERICAS = [
-    "Anio", "precipitacion_ciclo_mm", "dias_clima_ciclo",
+    "Anio",
+    "precipitacion_ciclo_mm",
+    "dias_clima_ciclo",
     "temperatura_media_ciclo_c",
     *[f"temperatura_{mes}_c" for mes in MESES],
     *[f"precipitacion_{mes}_mm" for mes in MESES],
-    "temperatura_oct_anterior_c", "temperatura_nov_anterior_c",
-    "temperatura_dic_anterior_c", "precipitacion_oct_anterior_mm",
-    "precipitacion_nov_anterior_mm", "precipitacion_dic_anterior_mm",
-    "grupo_suelo_dominante_pct", "textura_dominante_pct",
+    "temperatura_oct_anterior_c",
+    "temperatura_nov_anterior_c",
+    "temperatura_dic_anterior_c",
+    "precipitacion_oct_anterior_mm",
+    "precipitacion_nov_anterior_mm",
+    "precipitacion_dic_anterior_mm",
+    "grupo_suelo_dominante_pct",
+    "textura_dominante_pct",
     "grupos_suelo_n",
 ]
 
@@ -52,14 +76,23 @@ VARIABLES_ORDINALES = ["textura_dominante"]
 
 # Estas son etiquetas, no distancias; por ello se aplica one-hot.
 VARIABLES_NOMINALES = [
-    "Nomestado", "Nomcultivo", "Nomcicloproductivo", "Nommodalidad",
-    "Nomunidad", "grupo_suelo_dominante",
+    "Nomestado",
+    "Nomcultivo",
+    "Nomcicloproductivo",
+    "Nommodalidad",
+    "Nomunidad",
+    "grupo_suelo_dominante",
 ]
 
-COLUMNAS_LECTURA = list(dict.fromkeys(
-    COLUMNAS_IDENTIFICACION + COLUMNAS_OBJETIVO + VARIABLES_NUMERICAS
-    + VARIABLES_ORDINALES + VARIABLES_NOMINALES
-))
+COLUMNAS_LECTURA = list(
+    dict.fromkeys(
+        COLUMNAS_IDENTIFICACION
+        + COLUMNAS_OBJETIVO
+        + VARIABLES_NUMERICAS
+        + VARIABLES_ORDINALES
+        + VARIABLES_NOMINALES
+    )
+)
 
 
 def cargar_datos_nacionales(
@@ -70,16 +103,16 @@ def cargar_datos_nacionales(
     if not ruta.is_file():
         raise FileNotFoundError(f"No existe el dataset integrado: {ruta}")
     datos = pd.read_csv(
-        ruta, usecols=COLUMNAS_LECTURA, dtype={"cvegeo": "string"},
+        ruta,
+        usecols=COLUMNAS_LECTURA,
+        dtype={"cvegeo": "string"},
         low_memory=False,
     )
     datos["cvegeo"] = datos["cvegeo"].str.zfill(5)
     for columna in VARIABLES_NUMERICAS + VARIABLES_ORDINALES + COLUMNAS_OBJETIVO:
         datos[columna] = pd.to_numeric(datos[columna], errors="coerce")
     for columna in VARIABLES_NOMINALES:
-        datos[columna] = (
-            datos[columna].astype("string").fillna("Sin informacion")
-        )
+        datos[columna] = datos[columna].astype("string").fillna("Sin informacion")
     return datos
 
 
@@ -89,23 +122,35 @@ def crear_preprocesador() -> ColumnTransformer:
         [
             (
                 "magnitudes",
-                Pipeline([
-                    ("imputar", SimpleImputer(
-                        strategy="median", keep_empty_features=True,
-                    )),
-                    ("escalar", StandardScaler()),
-                ]),
+                Pipeline(
+                    [
+                        (
+                            "imputar",
+                            SimpleImputer(
+                                strategy="median",
+                                keep_empty_features=True,
+                            ),
+                        ),
+                        ("escalar", StandardScaler()),
+                    ]
+                ),
                 VARIABLES_NUMERICAS + VARIABLES_ORDINALES,
             ),
             (
                 "nominales",
-                Pipeline([
-                    ("imputar", SimpleImputer(strategy="most_frequent")),
-                    ("one_hot", OneHotEncoder(
-                        handle_unknown="ignore", sparse_output=True,
-                        dtype=np.float32,
-                    )),
-                ]),
+                Pipeline(
+                    [
+                        ("imputar", SimpleImputer(strategy="most_frequent")),
+                        (
+                            "one_hot",
+                            OneHotEncoder(
+                                handle_unknown="ignore",
+                                sparse_output=True,
+                                dtype=np.float32,
+                            ),
+                        ),
+                    ]
+                ),
                 VARIABLES_NOMINALES,
             ),
         ],
@@ -128,11 +173,11 @@ def ajustar_reduccion(
     matriz_ajuste = preprocesador.fit_transform(datos.loc[mascara])
     maximo = min(matriz_ajuste.shape) - 1
     if not 1 <= n_componentes <= maximo:
-        raise ValueError(
-            f"n_componentes debe estar entre 1 y {maximo}; recibido {n_componentes}."
-        )
+        raise ValueError(f"n_componentes debe estar entre 1 y {maximo}; recibido {n_componentes}.")
     reductor = TruncatedSVD(
-        n_components=n_componentes, algorithm="randomized", n_iter=7,
+        n_components=n_componentes,
+        algorithm="randomized",
+        n_iter=7,
         random_state=semilla,
     )
     reductor.fit(matriz_ajuste)
@@ -147,13 +192,11 @@ def transformar_dataset(
     """Transforma todo el periodo y conserva contexto y posibles objetivos."""
     matriz = preprocesador.transform(datos)
     componentes = reductor.transform(matriz).astype("float32")
-    nombres = [
-        f"componente_{numero:03d}"
-        for numero in range(1, componentes.shape[1] + 1)
-    ]
+    nombres = [f"componente_{numero:03d}" for numero in range(1, componentes.shape[1] + 1)]
     reducidas = pd.DataFrame(componentes, columns=nombres, index=datos.index)
     contexto = [
-        columna for columna in COLUMNAS_IDENTIFICACION + COLUMNAS_OBJETIVO
+        columna
+        for columna in COLUMNAS_IDENTIFICACION + COLUMNAS_OBJETIVO
         if columna in datos.columns
     ]
     return pd.concat(
@@ -191,13 +234,9 @@ def guardar_reduccion(
         "anio_ajuste_final": anio_ajuste_final,
         "registros": len(datos_reducidos),
         "n_componentes": len(componentes),
-        "varianza_explicada_acumulada": float(
-            reductor.explained_variance_ratio_.sum()
-        ),
+        "varianza_explicada_acumulada": float(reductor.explained_variance_ratio_.sum()),
         "variables_numericas_estandarizadas": VARIABLES_NUMERICAS,
-        "variables_ordinales": {
-            "textura_dominante": "1=gruesa, 2=media, 3=fina"
-        },
+        "variables_ordinales": {"textura_dominante": "1=gruesa, 2=media, 3=fina"},
         "variables_one_hot": VARIABLES_NOMINALES,
         "identificadores_no_predictivos": COLUMNAS_IDENTIFICACION,
         "posibles_objetivos_no_predictivos": COLUMNAS_OBJETIVO,

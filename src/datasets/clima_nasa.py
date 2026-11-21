@@ -3,12 +3,12 @@
 Entradas: DataFrame con cvegeo, Latitud, Longitud.
 Salida: CSV municipal anual con precipitación y temperatura.
 """
+
 from __future__ import annotations
 
 import logging
 import random
 import time
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -47,14 +47,23 @@ TRIMESTRES = {
 MESES = tuple(range(1, 13))
 
 
-def consultar_nasa_power(latitud: float, longitud: float, inicio: int = NASA_POWER_ANIO_INICIAL,
-                         fin: int = NASA_POWER_ANIO_FINAL, sesion: requests.Session | None = None,
-                         max_reintentos: int = NASA_POWER_MAX_REINTENTOS) -> dict:
+def consultar_nasa_power(
+    latitud: float,
+    longitud: float,
+    inicio: int = NASA_POWER_ANIO_INICIAL,
+    fin: int = NASA_POWER_ANIO_FINAL,
+    sesion: requests.Session | None = None,
+    max_reintentos: int = NASA_POWER_MAX_REINTENTOS,
+) -> dict:
     """Consulta datos diarios: T2M (°C) y PRECTOTCORR (mm/día)."""
     parametros = {
-        "parameters": ",".join(PARAMETROS), "community": NASA_POWER_COMMUNITY,
-        "latitude": float(latitud), "longitude": float(longitud),
-        "start": f"{inicio}0101", "end": f"{fin}1231", "format": NASA_POWER_FORMAT,
+        "parameters": ",".join(PARAMETROS),
+        "community": NASA_POWER_COMMUNITY,
+        "latitude": float(latitud),
+        "longitude": float(longitud),
+        "start": f"{inicio}0101",
+        "end": f"{fin}1231",
+        "format": NASA_POWER_FORMAT,
     }
     cliente = sesion or requests
     for intento in range(max_reintentos):
@@ -65,10 +74,12 @@ def consultar_nasa_power(latitud: float, longitud: float, inicio: int = NASA_POW
                     respuesta.raise_for_status()
                 espera = respuesta.headers.get("Retry-After", "")
                 try:
-                    segundos = min(float(espera), 300) if espera else min(10 * (2 ** intento), 300)
+                    segundos = min(float(espera), 300) if espera else min(10 * (2**intento), 300)
                 except ValueError:
-                    segundos = min(10 * (2 ** intento), 300)
-                LOGGER.warning("NASA POWER HTTP %s; esperando %.1f s", respuesta.status_code, segundos)
+                    segundos = min(10 * (2**intento), 300)
+                LOGGER.warning(
+                    "NASA POWER HTTP %s; esperando %.1f s", respuesta.status_code, segundos
+                )
                 time.sleep(segundos + random.uniform(0, 1))
                 continue
             respuesta.raise_for_status()
@@ -79,12 +90,16 @@ def consultar_nasa_power(latitud: float, longitud: float, inicio: int = NASA_POW
         except (requests.Timeout, requests.ConnectionError):
             if intento == max_reintentos - 1:
                 raise
-            time.sleep(min(10 * (2 ** intento), 300))
+            time.sleep(min(10 * (2**intento), 300))
     raise RuntimeError("No se pudo completar la consulta NASA POWER")
 
 
-def resumir_nasa_power(datos: dict, cvegeo: str, inicio: int = NASA_POWER_ANIO_INICIAL,
-                       fin: int = NASA_POWER_ANIO_FINAL) -> pd.DataFrame:
+def resumir_nasa_power(
+    datos: dict,
+    cvegeo: str,
+    inicio: int = NASA_POWER_ANIO_INICIAL,
+    fin: int = NASA_POWER_ANIO_FINAL,
+) -> pd.DataFrame:
     """Agrega días válidos a años completos; si falta un día, deja NaN."""
     valores = datos["properties"]["parameter"]
     series = {}
@@ -101,14 +116,21 @@ def resumir_nasa_power(datos: dict, cvegeo: str, inicio: int = NASA_POWER_ANIO_I
         esperados = 366 if pd.Timestamp(f"{anio}-12-31").is_leap_year else 365
         t = dias["T2M"]
         p = dias["PRECTOTCORR"]
-        filas.append({
-            "cvegeo": str(cvegeo).zfill(5), "anio": anio,
-            "precipitacion_anual_mm": float(p.sum()) if len(dias) == esperados and p.notna().sum() == esperados else np.nan,
-            "temperatura_media_c": float(t.mean()) if len(dias) == esperados and t.notna().sum() == esperados else np.nan,
-            "dias_precipitacion": int(p.notna().sum()),
-            "dias_temperatura": int(t.notna().sum()),
-            "fuente": "NASA POWER",
-        })
+        filas.append(
+            {
+                "cvegeo": str(cvegeo).zfill(5),
+                "anio": anio,
+                "precipitacion_anual_mm": float(p.sum())
+                if len(dias) == esperados and p.notna().sum() == esperados
+                else np.nan,
+                "temperatura_media_c": float(t.mean())
+                if len(dias) == esperados and t.notna().sum() == esperados
+                else np.nan,
+                "dias_precipitacion": int(p.notna().sum()),
+                "dias_temperatura": int(t.notna().sum()),
+                "fuente": "NASA POWER",
+            }
+        )
     return pd.DataFrame(filas)
 
 
@@ -152,12 +174,10 @@ def resumir_nasa_power_por_periodos(
             temperatura = dias["T2M"]
             precipitacion = dias["PRECTOTCORR"]
             completo_temperatura = (
-                len(dias) == dias_esperados
-                and temperatura.notna().sum() == dias_esperados
+                len(dias) == dias_esperados and temperatura.notna().sum() == dias_esperados
             )
             completo_precipitacion = (
-                len(dias) == dias_esperados
-                and precipitacion.notna().sum() == dias_esperados
+                len(dias) == dias_esperados and precipitacion.notna().sum() == dias_esperados
             )
             filas.append(
                 {
@@ -208,12 +228,10 @@ def resumir_nasa_power_trimestral(
             temperatura = dias["T2M"]
             precipitacion = dias["PRECTOTCORR"]
             completo_temperatura = (
-                len(dias) == dias_esperados
-                and temperatura.notna().sum() == dias_esperados
+                len(dias) == dias_esperados and temperatura.notna().sum() == dias_esperados
             )
             completo_precipitacion = (
-                len(dias) == dias_esperados
-                and precipitacion.notna().sum() == dias_esperados
+                len(dias) == dias_esperados and precipitacion.notna().sum() == dias_esperados
             )
             filas.append(
                 {
@@ -264,12 +282,10 @@ def resumir_nasa_power_mensual(
             temperatura = dias["T2M"]
             precipitacion = dias["PRECTOTCORR"]
             completo_temperatura = (
-                len(dias) == dias_esperados
-                and temperatura.notna().sum() == dias_esperados
+                len(dias) == dias_esperados and temperatura.notna().sum() == dias_esperados
             )
             completo_precipitacion = (
-                len(dias) == dias_esperados
-                and precipitacion.notna().sum() == dias_esperados
+                len(dias) == dias_esperados and precipitacion.notna().sum() == dias_esperados
             )
             filas.append(
                 {
@@ -335,12 +351,8 @@ def descargar_clima_nasa_por_celdas(
 
     # Los índices enteros producen identificadores estables y nombres de
     # archivo seguros, incluso para coordenadas negativas.
-    base["indice_celda_lat"] = np.rint(
-        base["Latitud"] / resolucion_latitud
-    ).astype(int)
-    base["indice_celda_lon"] = np.rint(
-        base["Longitud"] / resolucion_longitud
-    ).astype(int)
+    base["indice_celda_lat"] = np.rint(base["Latitud"] / resolucion_latitud).astype(int)
+    base["indice_celda_lon"] = np.rint(base["Longitud"] / resolucion_longitud).astype(int)
     base["celda_lat"] = base["indice_celda_lat"] * resolucion_latitud
     base["celda_lon"] = base["indice_celda_lon"] * resolucion_longitud
 
@@ -384,9 +396,7 @@ def descargar_clima_nasa_por_celdas(
                 temporal.replace(archivo)
                 time.sleep(pausa)
 
-            resumen_celda = resumir_nasa_power(datos, "00000", inicio, fin).drop(
-                columns="cvegeo"
-            )
+            resumen_celda = resumir_nasa_power(datos, "00000", inicio, fin).drop(columns="cvegeo")
             claves = grupo[["cvegeo"]].drop_duplicates().copy()
             claves["_union"] = 1
             resumen_celda["_union"] = 1
@@ -450,12 +460,8 @@ def descargar_clima_nasa_periodos_por_celdas(
     if base[["Latitud", "Longitud"]].isna().any().any():
         raise ValueError("Hay coordenadas municipales faltantes o no válidas")
 
-    base["indice_celda_lat"] = np.rint(
-        base["Latitud"] / resolucion_latitud
-    ).astype(int)
-    base["indice_celda_lon"] = np.rint(
-        base["Longitud"] / resolucion_longitud
-    ).astype(int)
+    base["indice_celda_lat"] = np.rint(base["Latitud"] / resolucion_latitud).astype(int)
+    base["indice_celda_lon"] = np.rint(base["Longitud"] / resolucion_longitud).astype(int)
     base["celda_lat"] = base["indice_celda_lat"] * resolucion_latitud
     base["celda_lon"] = base["indice_celda_lon"] * resolucion_longitud
 
@@ -517,9 +523,7 @@ def descargar_clima_nasa_periodos_por_celdas(
                 time.sleep(pausa)
 
             for fila in grupo.itertuples(index=False):
-                archivo_reciente = NASA_POWER_RAW_DIR / (
-                    f"nasa_{fila.cvegeo}_2023_{fin}.json"
-                )
+                archivo_reciente = NASA_POWER_RAW_DIR / (f"nasa_{fila.cvegeo}_2023_{fin}.json")
                 if archivo_reciente.exists():
                     with archivo_reciente.open("r", encoding="utf-8") as f:
                         datos_recientes = json.load(f)
@@ -544,9 +548,7 @@ def descargar_clima_nasa_periodos_por_celdas(
                         parametros_combinados[variable].update(
                             fragmento["properties"]["parameter"][variable]
                         )
-                datos_combinados = {
-                    "properties": {"parameter": parametros_combinados}
-                }
+                datos_combinados = {"properties": {"parameter": parametros_combinados}}
                 if frecuencia == "periodos":
                     tabla = resumir_nasa_power_por_periodos(
                         datos_combinados,
@@ -588,9 +590,7 @@ def descargar_clima_nasa_periodos_por_celdas(
         if resultado.duplicated(claves).any():
             raise ValueError("La descarga generó claves municipio-año-periodo duplicadas")
         if frecuencia == "periodos":
-            destino = NASA_POWER_PROCESSED_DIR / (
-                f"clima_municipal_periodos_{inicio}_{fin}.csv"
-            )
+            destino = NASA_POWER_PROCESSED_DIR / (f"clima_municipal_periodos_{inicio}_{fin}.csv")
         elif frecuencia == "trimestres":
             destino = NASA_POWER_PROCESSED_DIR / (
                 f"clima_municipal_trimestral_{inicio - 1}_{fin}.csv"

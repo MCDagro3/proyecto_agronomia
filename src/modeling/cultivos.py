@@ -8,10 +8,7 @@ import pandas as pd
 
 from proyecto_agronomia.config import PROCESSED_DATA_DIR
 
-RUTA_INTEGRADA = (
-    PROCESSED_DATA_DIR
-    / "agricultura_clima_edafologia_historial_2003_2025.csv"
-)
+RUTA_INTEGRADA = PROCESSED_DATA_DIR / "agricultura_clima_edafologia_historial_2003_2025.csv"
 
 VARIABLES_HISTORICAS = [
     "rendimiento_hist_anios",
@@ -22,18 +19,34 @@ VARIABLES_HISTORICAS = [
 ]
 
 VARIABLES_NUMERICAS = [
-    "Anio", "temperatura_media_ciclo_c", "precipitacion_ciclo_mm",
-    "dias_clima_ciclo", "grupo_suelo_dominante_pct", "grupos_suelo_n",
+    "Anio",
+    "temperatura_media_ciclo_c",
+    "precipitacion_ciclo_mm",
+    "dias_clima_ciclo",
+    "grupo_suelo_dominante_pct",
+    "grupos_suelo_n",
     *VARIABLES_HISTORICAS,
 ]
 VARIABLES_CATEGORICAS = [
-    "Nomestado", "Nomcicloproductivo", "Nommodalidad",
-    "grupo_suelo_dominante", "textura_dominante",
+    "Nomestado",
+    "Nomcicloproductivo",
+    "Nommodalidad",
+    "grupo_suelo_dominante",
+    "textura_dominante",
 ]
 COLUMNAS_BASE = [
-    "cvegeo", "Anio", "Nomestado", "Nommunicipio", "Nomcultivo",
-    "Nomcicloproductivo", "Nommodalidad", "Nomunidad", "Cosechada",
-    "Volumenproduccion", *VARIABLES_NUMERICAS[1:], *VARIABLES_CATEGORICAS[3:],
+    "cvegeo",
+    "Anio",
+    "Nomestado",
+    "Nommunicipio",
+    "Nomcultivo",
+    "Nomcicloproductivo",
+    "Nommodalidad",
+    "Nomunidad",
+    "Cosechada",
+    "Volumenproduccion",
+    *VARIABLES_NUMERICAS[1:],
+    *VARIABLES_CATEGORICAS[3:],
 ]
 
 
@@ -48,14 +61,18 @@ def catalogar_cultivos(
     municipios = defaultdict(set)
     columnas = ["Nomcultivo", "Nomunidad", "Cosechada", "Anio", "cvegeo"]
     for bloque in pd.read_csv(
-        Path(ruta), usecols=columnas, dtype={"cvegeo": "string"},
-        chunksize=tamano_bloque, low_memory=False,
+        Path(ruta),
+        usecols=columnas,
+        dtype={"cvegeo": "string"},
+        chunksize=tamano_bloque,
+        low_memory=False,
     ):
         bloque = bloque.loc[bloque["Nomunidad"].eq(unidad)].copy()
         bloque["Cosechada"] = pd.to_numeric(bloque["Cosechada"], errors="coerce")
         acumulados.append(
-            bloque.groupby("Nomcultivo", observed=True)["Cosechada"]
-            .agg(superficie_cosechada="sum", registros="count")
+            bloque.groupby("Nomcultivo", observed=True)["Cosechada"].agg(
+                superficie_cosechada="sum", registros="count"
+            )
         )
         for cultivo, grupo in bloque.groupby("Nomcultivo", observed=True):
             anios[cultivo].update(grupo["Anio"].dropna().astype(int).unique())
@@ -74,8 +91,7 @@ def seleccionar_principales(
 ) -> pd.DataFrame:
     """Elige por superficie entre cultivos con cobertura suficiente."""
     elegibles = catalogo.loc[
-        catalogo["anios"].ge(minimo_anios)
-        & catalogo["municipios"].ge(minimo_municipios)
+        catalogo["anios"].ge(minimo_anios) & catalogo["municipios"].ge(minimo_municipios)
     ]
     return elegibles.head(cantidad).reset_index(drop=True)
 
@@ -90,8 +106,11 @@ def cargar_registros_cultivos(
     seleccionados = set(cultivos)
     bloques = []
     for bloque in pd.read_csv(
-        Path(ruta), usecols=COLUMNAS_BASE, dtype={"cvegeo": "string"},
-        chunksize=tamano_bloque, low_memory=False,
+        Path(ruta),
+        usecols=COLUMNAS_BASE,
+        dtype={"cvegeo": "string"},
+        chunksize=tamano_bloque,
+        low_memory=False,
     ):
         mascara = bloque["Nomcultivo"].isin(seleccionados) & bloque["Nomunidad"].eq(unidad)
         if mascara.any():
@@ -107,12 +126,18 @@ def preparar_cultivo(datos_nacionales: pd.DataFrame, cultivo: str) -> pd.DataFra
     numericas = ["Cosechada", "Volumenproduccion", *VARIABLES_NUMERICAS]
     datos[numericas] = datos[numericas].apply(pd.to_numeric, errors="coerce")
     claves = [
-        "cvegeo", "Anio", "Nomcultivo", "Nomcicloproductivo",
-        "Nommodalidad", "Nomunidad",
+        "cvegeo",
+        "Anio",
+        "Nomcultivo",
+        "Nomcicloproductivo",
+        "Nommodalidad",
+        "Nomunidad",
     ]
     datos = datos.groupby(claves, as_index=False, observed=True, dropna=False).agg(
-        Nomestado=("Nomestado", "first"), Nommunicipio=("Nommunicipio", "first"),
-        Cosechada=("Cosechada", "sum"), Volumenproduccion=("Volumenproduccion", "sum"),
+        Nomestado=("Nomestado", "first"),
+        Nommunicipio=("Nommunicipio", "first"),
+        Cosechada=("Cosechada", "sum"),
+        Volumenproduccion=("Volumenproduccion", "sum"),
         temperatura_media_ciclo_c=("temperatura_media_ciclo_c", "first"),
         precipitacion_ciclo_mm=("precipitacion_ciclo_mm", "first"),
         dias_clima_ciclo=("dias_clima_ciclo", "first"),
@@ -129,8 +154,7 @@ def preparar_cultivo(datos_nacionales: pd.DataFrame, cultivo: str) -> pd.DataFra
     datos["Rendimiento"] = datos["Volumenproduccion"] / datos["Cosechada"]
     datos = datos.replace([np.inf, -np.inf], np.nan)
     datos = datos.loc[
-        datos["Cosechada"].gt(0) & datos["Rendimiento"].gt(0)
-        & datos["Rendimiento"].notna()
+        datos["Cosechada"].gt(0) & datos["Rendimiento"].gt(0) & datos["Rendimiento"].notna()
     ].copy()
     for columna in VARIABLES_CATEGORICAS:
         datos[columna] = datos[columna].astype("string").fillna("Sin informacion")
@@ -138,8 +162,7 @@ def preparar_cultivo(datos_nacionales: pd.DataFrame, cultivo: str) -> pd.DataFra
     # al inicio de cada serie. Se conserva: el pipeline lo imputa dentro de cada
     # particion, sin descartar justamente los primeros anos del cultivo.
     numericas_obligatorias = [
-        columna for columna in VARIABLES_NUMERICAS
-        if columna not in VARIABLES_HISTORICAS
+        columna for columna in VARIABLES_NUMERICAS if columna not in VARIABLES_HISTORICAS
     ]
     return datos.dropna(subset=numericas_obligatorias).reset_index(drop=True)
 

@@ -8,14 +8,21 @@ import pandas as pd
 from proyecto_agronomia.config import INTERIM_DATA_DIR
 
 RUTA_DATOS_MODELO = (
-    INTERIM_DATA_DIR / "modeling" / "nacional"
-    / "agricultura_modelado_pca_2003_2025.csv"
+    INTERIM_DATA_DIR / "modeling" / "nacional" / "agricultura_modelado_pca_2003_2025.csv"
 )
 OBJETIVO = "Rendimiento"
 COLUMNAS_CONTEXTO = [
-    "cvegeo", "Anio", "Nomestado", "Nommunicipio", "Nomcultivo",
-    "Nomcicloproductivo", "Nommodalidad", "Nomunidad", "Cosechada",
-    "Volumenproduccion", OBJETIVO,
+    "cvegeo",
+    "Anio",
+    "Nomestado",
+    "Nommunicipio",
+    "Nomcultivo",
+    "Nomcicloproductivo",
+    "Nommodalidad",
+    "Nomunidad",
+    "Cosechada",
+    "Volumenproduccion",
+    OBJETIVO,
 ]
 
 
@@ -42,8 +49,11 @@ def preparar_datos_cultivo(
     usecols = [*COLUMNAS_CONTEXTO, *componentes]
     bloques = []
     for bloque in pd.read_csv(
-        ruta, usecols=usecols, dtype={"cvegeo": "string"},
-        chunksize=tamano_bloque, low_memory=False,
+        ruta,
+        usecols=usecols,
+        dtype={"cvegeo": "string"},
+        chunksize=tamano_bloque,
+        low_memory=False,
     ):
         seleccion = bloque.loc[bloque["Nomcultivo"].eq(cultivo)]
         if not seleccion.empty:
@@ -60,23 +70,25 @@ def preparar_datos_cultivo(
         raise ValueError(f"No hay registros de {cultivo!r} con unidad {unidad!r}.")
 
     claves = [
-        "cvegeo", "Anio", "Nomcultivo", "Nomcicloproductivo",
-        "Nommodalidad", "Nomunidad",
+        "cvegeo",
+        "Anio",
+        "Nomcultivo",
+        "Nomcicloproductivo",
+        "Nommodalidad",
+        "Nomunidad",
     ]
     agregaciones = {
-        "Nomestado": "first", "Nommunicipio": "first",
-        "Cosechada": "sum", "Volumenproduccion": "sum",
+        "Nomestado": "first",
+        "Nommunicipio": "first",
+        "Cosechada": "sum",
+        "Volumenproduccion": "sum",
         **{columna: "first" for columna in componentes},
     }
-    datos = datos.groupby(
-        claves, as_index=False, observed=True, dropna=False
-    ).agg(agregaciones)
+    datos = datos.groupby(claves, as_index=False, observed=True, dropna=False).agg(agregaciones)
     datos[OBJETIVO] = datos["Volumenproduccion"] / datos["Cosechada"]
     datos = datos.replace([np.inf, -np.inf], np.nan)
     datos = datos.loc[
-        datos["Cosechada"].gt(0)
-        & datos[OBJETIVO].gt(0)
-        & datos[OBJETIVO].notna()
+        datos["Cosechada"].gt(0) & datos[OBJETIVO].gt(0) & datos[OBJETIVO].notna()
     ].reset_index(drop=True)
     return datos, unidad
 

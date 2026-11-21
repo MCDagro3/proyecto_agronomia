@@ -59,9 +59,7 @@ def guardar_modelo(
     destino = ruta_version_modelo(cultivo, version, familia, directorio)
     ruta_modelo = destino / "model.joblib"
     if ruta_modelo.exists() and not sobrescribir:
-        raise FileExistsError(
-            f"Ya existe {ruta_modelo}. Usa otra versión o sobrescribir=True."
-        )
+        raise FileExistsError(f"Ya existe {ruta_modelo}. Usa otra versión o sobrescribir=True.")
     destino.mkdir(parents=True, exist_ok=True)
     metadata_completa = {
         **metadata,

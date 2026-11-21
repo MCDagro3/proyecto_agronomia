@@ -1,22 +1,31 @@
 """Funciones de integración espacial y climática para el proyecto agronómico."""
+
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import BallTree
 
-
 NOMBRES_MESES = {
-    1: "ene", 2: "feb", 3: "mar", 4: "abr", 5: "may", 6: "jun",
-    7: "jul", 8: "ago", 9: "sep", 10: "oct", 11: "nov", 12: "dic",
+    1: "ene",
+    2: "feb",
+    3: "mar",
+    4: "abr",
+    5: "may",
+    6: "jun",
+    7: "jul",
+    8: "ago",
+    9: "sep",
+    10: "oct",
+    11: "nov",
+    12: "dic",
 }
 
 
 def crear_clave_municipal(df):
     """Agrega cvegeo (2 dígitos entidad + 3 municipio) sin modificar el origen."""
     resultado = df.copy()
-    resultado["cvegeo"] = (
-        resultado["Idestado"].astype(int).astype(str).str.zfill(2)
-        + resultado["Idmunicipio"].astype(int).astype(str).str.zfill(3)
-    )
+    resultado["cvegeo"] = resultado["Idestado"].astype(int).astype(str).str.zfill(2) + resultado[
+        "Idmunicipio"
+    ].astype(int).astype(str).str.zfill(3)
     return resultado
 
 
@@ -27,8 +36,13 @@ def validar_clima_mensual(
 ) -> pd.DataFrame:
     """Valida llave, cobertura temporal y completitud del clima NASA mensual."""
     requeridas = {
-        "cvegeo", "anio", "mes", "temperatura_media_mes_c",
-        "precipitacion_mes_mm", "dias_esperados", "dias_temperatura",
+        "cvegeo",
+        "anio",
+        "mes",
+        "temperatura_media_mes_c",
+        "precipitacion_mes_mm",
+        "dias_esperados",
+        "dias_temperatura",
         "dias_precipitacion",
     }
     faltantes = requeridas - set(clima.columns)
@@ -45,8 +59,8 @@ def validar_clima_mensual(
     encontrados = set(resultado["anio"].dropna().unique())
     if encontrados != esperados:
         raise ValueError(
-            f"Cobertura anual inesperada; faltan={sorted(esperados-encontrados)}, "
-            f"sobran={sorted(encontrados-esperados)}"
+            f"Cobertura anual inesperada; faltan={sorted(esperados - encontrados)}, "
+            f"sobran={sorted(encontrados - esperados)}"
         )
     indicadores = ["temperatura_media_mes_c", "precipitacion_mes_mm"]
     if resultado[indicadores].isna().any().any():
@@ -64,24 +78,17 @@ def construir_clima_mensual_ancho(clima: pd.DataFrame) -> pd.DataFrame:
     temperatura = clima.pivot(
         index=indice, columns="mes", values="temperatura_media_mes_c"
     ).rename(columns={m: f"temperatura_{n}_c" for m, n in NOMBRES_MESES.items()})
-    precipitacion = clima.pivot(
-        index=indice, columns="mes", values="precipitacion_mes_mm"
-    ).rename(columns={m: f"precipitacion_{n}_mm" for m, n in NOMBRES_MESES.items()})
+    precipitacion = clima.pivot(index=indice, columns="mes", values="precipitacion_mes_mm").rename(
+        columns={m: f"precipitacion_{n}_mm" for m, n in NOMBRES_MESES.items()}
+    )
     anteriores = clima.loc[clima["mes"].isin([10, 11, 12])].copy()
     anteriores["anio"] += 1
     temperatura_anterior = anteriores.pivot(
         index=indice, columns="mes", values="temperatura_media_mes_c"
-    ).rename(
-        columns={m: f"temperatura_{NOMBRES_MESES[m]}_anterior_c" for m in [10, 11, 12]}
-    )
+    ).rename(columns={m: f"temperatura_{NOMBRES_MESES[m]}_anterior_c" for m in [10, 11, 12]})
     precipitacion_anterior = anteriores.pivot(
         index=indice, columns="mes", values="precipitacion_mes_mm"
-    ).rename(
-        columns={
-            m: f"precipitacion_{NOMBRES_MESES[m]}_anterior_mm"
-            for m in [10, 11, 12]
-        }
-    )
+    ).rename(columns={m: f"precipitacion_{NOMBRES_MESES[m]}_anterior_mm" for m in [10, 11, 12]})
     return (
         temperatura.join(precipitacion, validate="one_to_one")
         .join(temperatura_anterior, validate="one_to_one")
@@ -93,8 +100,11 @@ def construir_clima_mensual_ancho(clima: pd.DataFrame) -> pd.DataFrame:
 def resumir_clima_por_ciclo(clima: pd.DataFrame) -> pd.DataFrame:
     """Resume temperatura ponderada y precipitación según el ciclo productivo."""
     columnas = [
-        "cvegeo", "anio", "temperatura_media_mes_c",
-        "precipitacion_mes_mm", "dias_esperados",
+        "cvegeo",
+        "anio",
+        "temperatura_media_mes_c",
+        "precipitacion_mes_mm",
+        "dias_esperados",
     ]
     oi_actual = clima.loc[clima["mes"].isin([1, 2, 3]), columnas].copy()
     oi_actual["Nomcicloproductivo"] = "Otoño-Invierno"
@@ -105,15 +115,11 @@ def resumir_clima_por_ciclo(clima: pd.DataFrame) -> pd.DataFrame:
     primavera_verano["Nomcicloproductivo"] = "Primavera-Verano"
     perennes = clima[columnas].copy()
     perennes["Nomcicloproductivo"] = "Perennes"
-    ventanas = pd.concat(
-        [oi_anterior, oi_actual, primavera_verano, perennes], ignore_index=True
-    )
+    ventanas = pd.concat([oi_anterior, oi_actual, primavera_verano, perennes], ignore_index=True)
     ventanas["temperatura_por_dias"] = (
         ventanas["temperatura_media_mes_c"] * ventanas["dias_esperados"]
     )
-    resumen = ventanas.groupby(
-        ["cvegeo", "anio", "Nomcicloproductivo"], as_index=False
-    ).agg(
+    resumen = ventanas.groupby(["cvegeo", "anio", "Nomcicloproductivo"], as_index=False).agg(
         temperatura_por_dias=("temperatura_por_dias", "sum"),
         precipitacion_ciclo_mm=("precipitacion_mes_mm", "sum"),
         dias_clima_ciclo=("dias_esperados", "sum"),
@@ -184,9 +190,16 @@ def asignar_estaciones_cercanas(puntos_municipales, estaciones_clima, claves_agr
     for i, mun in enumerate(municipios.itertuples(index=False)):
         for j in range(k):
             est = estaciones.iloc[idx[i, j]]
-            registros.append({"cvegeo": mun.cvegeo, "municipio": mun.nomgeo,
-                             "estacion": est["estacion"], "nombre_estacion": est["nombre"],
-                             "orden_cercania": j + 1, "distancia_km": float(dist[i, j] * 6371.0088)})
+            registros.append(
+                {
+                    "cvegeo": mun.cvegeo,
+                    "municipio": mun.nomgeo,
+                    "estacion": est["estacion"],
+                    "nombre_estacion": est["nombre"],
+                    "orden_cercania": j + 1,
+                    "distancia_km": float(dist[i, j] * 6371.0088),
+                }
+            )
     return pd.DataFrame(registros)
 
 
@@ -203,23 +216,35 @@ def interpolar_clima_municipal(df_proximidad, df_clima_anual, radio_max_km=100, 
     combinado["peso"] = 1.0 / combinado["distancia_km"].clip(lower=0.001).pow(potencia)
     indice = pd.MultiIndex.from_product(
         [df_proximidad["cvegeo"].drop_duplicates(), sorted(clima["anio"].unique())],
-        names=["cvegeo", "anio"])
+        names=["cvegeo", "anio"],
+    )
     resultado = indice.to_frame(index=False)
     for indicador in ("precipitacion_anual_mm", "temperatura_media_c"):
         validos = combinado.loc[combinado[indicador].notna()].copy()
         validos["producto"] = validos[indicador] * validos["peso"]
-        agregado = validos.groupby(["cvegeo", "anio"]).agg(
-            numerador=("producto", "sum"), denominador=("peso", "sum"),
-            n_estaciones=("estacion", "nunique"),
-            distancia_min_km=("distancia_km", "min"),
-        ).reset_index()
+        agregado = (
+            validos.groupby(["cvegeo", "anio"])
+            .agg(
+                numerador=("producto", "sum"),
+                denominador=("peso", "sum"),
+                n_estaciones=("estacion", "nunique"),
+                distancia_min_km=("distancia_km", "min"),
+            )
+            .reset_index()
+        )
         agregado[indicador] = agregado["numerador"] / agregado["denominador"]
-        agregado = agregado[["cvegeo", "anio", indicador, "n_estaciones", "distancia_min_km"]].rename(columns={
-            "n_estaciones": f"estaciones_{indicador}",
-            "distancia_min_km": f"distancia_min_{indicador}_km",
-        })
-        resultado = resultado.merge(agregado, on=["cvegeo", "anio"], how="left", validate="one_to_one")
-        resultado[f"estaciones_{indicador}"] = resultado[f"estaciones_{indicador}"].fillna(0).astype(int)
+        agregado = agregado[
+            ["cvegeo", "anio", indicador, "n_estaciones", "distancia_min_km"]
+        ].rename(
+            columns={
+                "n_estaciones": f"estaciones_{indicador}",
+                "distancia_min_km": f"distancia_min_{indicador}_km",
+            }
+        )
+        resultado = resultado.merge(
+            agregado, on=["cvegeo", "anio"], how="left", validate="one_to_one"
+        )
+        resultado[f"estaciones_{indicador}"] = (
+            resultado[f"estaciones_{indicador}"].fillna(0).astype(int)
+        )
     return resultado.sort_values(["cvegeo", "anio"]).reset_index(drop=True)
-
-

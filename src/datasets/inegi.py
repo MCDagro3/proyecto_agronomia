@@ -4,8 +4,8 @@ import time
 import zipfile
 
 import geopandas as gpd
-import requests
 from loguru import logger
+import requests
 from tqdm import tqdm
 
 from proyecto_agronomia.config import (
@@ -17,19 +17,37 @@ from proyecto_agronomia.config import (
     INEGI_USV_RAW_DIR,
 )
 
-
 SERIES_USO_SUELO = ("I", "II", "III", "IV", "V", "VI", "VII")
 CONSULTA_USO_SUELO = {
-    "enti": "", "muni": "", "loca": "", "tema": "", "titg": "",
-    "esca": 2, "edic": "", "form": 9, "prog": "",
+    "enti": "",
+    "muni": "",
+    "loca": "",
+    "tema": "",
+    "titg": "",
+    "esca": 2,
+    "edic": "",
+    "form": 9,
+    "prog": "",
     "busc": "uso del suelo y vegetación",
-    "tipoB": 1, "adv": False, "rango": "", "sens": "", "uedo": "",
-    "reso": "", "point": "", "malla": "", "poligono": "", "buscAG": None,
-    "orden": 4, "desc": True, "pag": 0, "tam": 100,
+    "tipoB": 1,
+    "adv": False,
+    "rango": "",
+    "sens": "",
+    "uedo": "",
+    "reso": "",
+    "point": "",
+    "malla": "",
+    "poligono": "",
+    "buscAG": None,
+    "orden": 4,
+    "desc": True,
+    "pag": 0,
+    "tam": 100,
 }
 PATRON_SERIE_NACIONAL = re.compile(
     r"[Ss]erie\s*\(?([IVX]+)\)?\s*\.?\s*(Conjunto|Continuo)\s+Nacional\.?\s*$"
 )
+
 
 def obtener_municipios_inegi(
     directorio: Path = INEGI_INTERIM_DIR,
@@ -58,13 +76,9 @@ def obtener_municipios_inegi(
     ):
         clave_estado = f"{id_estado:02d}"
 
-        url = INEGI_MUNICIPIOS_URL_TEMPLATE.format(
-            clave_estado=clave_estado
-        )
+        url = INEGI_MUNICIPIOS_URL_TEMPLATE.format(clave_estado=clave_estado)
 
-        logger.info(
-            f"Descargando municipios del estado {clave_estado}."
-        )
+        logger.info(f"Descargando municipios del estado {clave_estado}.")
 
         try:
             respuesta = requests.get(
@@ -76,14 +90,10 @@ def obtener_municipios_inegi(
             datos = respuesta.json()
 
         except requests.RequestException as error:
-            logger.error(
-                f"Error descargando estado {clave_estado}: {error}"
-            )
+            logger.error(f"Error descargando estado {clave_estado}: {error}")
             raise
 
-        features.extend(
-            datos["features"]
-        )
+        features.extend(datos["features"])
 
     municipios_geo = gpd.GeoDataFrame.from_features(
         features,
@@ -95,11 +105,10 @@ def obtener_municipios_inegi(
         driver="GeoJSON",
     )
 
-    logger.success(
-        f"Municipios INEGI guardados: {len(municipios_geo):,}"
-    )
+    logger.success(f"Municipios INEGI guardados: {len(municipios_geo):,}")
 
     return municipios_geo
+
 
 def obtener_estados_inegi(
     directorio: Path = INEGI_INTERIM_DIR,
@@ -127,13 +136,9 @@ def obtener_estados_inegi(
     ):
         clave_estado = f"{id_estado:02d}"
 
-        url = INEGI_ESTADOS_URL_TEMPLATE.format(
-            clave_estado=clave_estado
-        )
+        url = INEGI_ESTADOS_URL_TEMPLATE.format(clave_estado=clave_estado)
 
-        logger.info(
-            f"Descargando estado {clave_estado}."
-        )
+        logger.info(f"Descargando estado {clave_estado}.")
 
         try:
             respuesta = requests.get(
@@ -144,9 +149,7 @@ def obtener_estados_inegi(
             datos = respuesta.json()
 
         except requests.RequestException as error:
-            logger.error(
-                f"Error descargando estado {clave_estado}: {error}"
-            )
+            logger.error(f"Error descargando estado {clave_estado}: {error}")
             raise
 
         features.extend(datos["features"])
@@ -161,9 +164,7 @@ def obtener_estados_inegi(
         driver="GeoJSON",
     )
 
-    logger.success(
-        f"Entidades geográficas guardadas: {len(estados_geo)}"
-    )
+    logger.success(f"Entidades geográficas guardadas: {len(estados_geo)}")
 
     return estados_geo
 
@@ -200,9 +201,7 @@ def buscar_mapas_inegi(
     pagina = 0
     while True:
         parametros["pag"] = pagina
-        datos = _post_mapas_inegi(
-            "lista/resultados", parametros, sesion=sesion
-        )
+        datos = _post_mapas_inegi("lista/resultados", parametros, sesion=sesion)
         if not datos.get("success"):
             raise RuntimeError(f"INEGI rechazó la consulta: {datos}")
         lote = datos.get("list", {}).get("mapas", [])
@@ -227,11 +226,7 @@ def catalogo_uso_suelo_nacional(
         if not coincide or mapa.get("entidad") != "Estados Unidos Mexicanos":
             continue
         shp = next(
-            (
-                formato
-                for formato in mapa.get("formatos", [])
-                if formato.get("extension") == "SHP"
-            ),
+            (formato for formato in mapa.get("formatos", []) if formato.get("extension") == "SHP"),
             None,
         )
         if shp is None:

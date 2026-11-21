@@ -16,13 +16,12 @@ from proyecto_agronomia.config import (
     AGRICULTURA_DICCIONARIO_URL,
     AGRICULTURA_RAW_DIR,
     AGRICULTURA_URL_TEMPLATE,
-    DGSIAP_AGROPROGRAMA_URL,
     DGSIAP_AGROPROGRAMA_RAW_DIR,
-    DGSIAP_AVANCE_URL,
+    DGSIAP_AGROPROGRAMA_URL,
     DGSIAP_AVANCE_RAW_DIR,
+    DGSIAP_AVANCE_URL,
     DGSIAP_DATOS_ABIERTOS_URL,
 )
-
 
 TIPO_REPORTE = {"geografico": 1, "cultivo": 2}
 NIVEL_REPORTE = {
@@ -80,20 +79,13 @@ def descargar_datos_agricolas(
             )
             respuesta.raise_for_status()
 
-            ruta.write_bytes(
-                respuesta.content
-            )
+            ruta.write_bytes(respuesta.content)
 
         except requests.RequestException as error:
-            logger.error(
-                f"[{anio}] Error durante la descarga: {error}"
-            )
+            logger.error(f"[{anio}] Error durante la descarga: {error}")
             continue
 
-        logger.success(
-            f"[{anio}] Descargado "
-            f"({ruta.stat().st_size / (1024**2):.2f} MB)"
-        )
+        logger.success(f"[{anio}] Descargado ({ruta.stat().st_size / (1024**2):.2f} MB)")
 
         archivos.append(ruta)
 
@@ -127,14 +119,10 @@ def descargar_diccionario_agricola(
     )
 
     if ruta.exists():
-        logger.info(
-            "El diccionario agrícola ya existe."
-        )
+        logger.info("El diccionario agrícola ya existe.")
         return ruta
 
-    logger.info(
-        "Descargando diccionario agrícola DGSIAP..."
-    )
+    logger.info("Descargando diccionario agrícola DGSIAP...")
 
     try:
         respuesta = requests.get(
@@ -144,21 +132,13 @@ def descargar_diccionario_agricola(
 
         respuesta.raise_for_status()
 
-        ruta.write_bytes(
-            respuesta.content
-        )
+        ruta.write_bytes(respuesta.content)
 
     except requests.RequestException as error:
-        logger.error(
-            "Error descargando el diccionario "
-            f"agrícola: {error}"
-        )
+        logger.error(f"Error descargando el diccionario agrícola: {error}")
         raise
 
-    logger.success(
-        "Diccionario agrícola descargado: "
-        f"{ruta.name}"
-    )
+    logger.success(f"Diccionario agrícola descargado: {ruta.name}")
 
     return ruta
 
@@ -203,9 +183,7 @@ def descubrir_recursos_dgsiap(
             if categoria == "Municipal"
             else bloque
         )
-        columnas = seccion_diccionario.find_all(
-            "div", {"class": re.compile(r"col-12 col-md-6.*")}
-        )
+        columnas = seccion_diccionario.find_all("div", {"class": re.compile(r"col-12 col-md-6.*")})
         if len(columnas) < 2:
             logger.warning(f"DGSIAP: se omitió la categoría {categoria!r}.")
             continue
@@ -224,13 +202,10 @@ def descubrir_recursos_dgsiap(
                 if detalle and detalle.find("h4")
                 else None,
                 "estado": valores[0].get_text(" ", strip=True) if valores else None,
-                "rango": valores[1].get_text(" ", strip=True)
-                if len(valores) > 1
-                else None,
+                "rango": valores[1].get_text(" ", strip=True) if len(valores) > 1 else None,
             },
             "datasets": [
-                enlace["href"]
-                for enlace in bloque.find_all("a", {"class": "dl-btn"}, href=True)
+                enlace["href"] for enlace in bloque.find_all("a", {"class": "dl-btn"}, href=True)
             ],
         }
     return recursos
@@ -300,9 +275,7 @@ class AvanceAgricola:
         return self._opciones("cargaMuni", entidad, distrito)
 
     def cultivos(self, anio, mes, ciclo=5, entidad=0, distrito=0, municipio=0):
-        return self._opciones(
-            "llenaCultivo", anio, entidad, mes, ciclo, distrito, municipio
-        )
+        return self._opciones("llenaCultivo", anio, entidad, mes, ciclo, distrito, municipio)
 
     def unidades(self, cultivo):
         return self._opciones("llenaUnidMed", cultivo)
@@ -356,9 +329,7 @@ class AvanceAgricola:
         tabla = tabla.iloc[:, 1:]
         tabla = tabla[tabla.iloc[:, 0] != "Total"].reset_index(drop=True)
         titulo = BeautifulSoup(html, "html.parser").select_one(".titulosTabla")
-        tabla.attrs["encabezado"] = (
-            titulo.get_text(" ", strip=True) if titulo else None
-        )
+        tabla.attrs["encabezado"] = titulo.get_text(" ", strip=True) if titulo else None
         return tabla
 
 
@@ -369,8 +340,7 @@ class AgroPrograma:
         self.session = sesion or requests.Session()
         self.timeout = timeout
         self.control_url = (
-            f"{DGSIAP_AGROPROGRAMA_URL.rstrip('/')}/control/"
-            "ctrl.siembras.cosechas.php"
+            f"{DGSIAP_AGROPROGRAMA_URL.rstrip('/')}/control/ctrl.siembras.cosechas.php"
         )
 
     @cached_property
@@ -478,9 +448,7 @@ class AgroPrograma:
             thousands=",",
             converters=dict.fromkeys(CLAVES_AGROPROGRAMA, str),
         )[0]
-        tabla = tabla[tabla["No."] != "Total"].drop(columns="No.").reset_index(
-            drop=True
-        )
+        tabla = tabla[tabla["No."] != "Total"].drop(columns="No.").reset_index(drop=True)
         tabla.attrs["encabezado"] = " ".join(
             elemento.get_text(" ", strip=True)
             for elemento in pagina.select("#subTitleMod, #titulosFiltros")

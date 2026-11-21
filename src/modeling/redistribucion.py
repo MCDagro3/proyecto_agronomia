@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy.optimize import linprog
 from scipy.sparse import coo_matrix
 
-from proyecto_agronomia.config import MODELS_DIR
 from modeling.cultivos import (
     VARIABLES_CATEGORICAS,
     VARIABLES_NUMERICAS,
@@ -41,22 +39,22 @@ def cultivos_con_modelo_valido(
         esquema_compatible = esquema.get("variables") == variables_esperadas
         ganador = metadata["algoritmo"]
         espacial = next(
-            fila for fila in metricas["comparacion_modelos"]
-            if fila["modelo"] == ganador
-            and fila["particion"] == "prueba_espaciotemporal"
+            fila
+            for fila in metricas["comparacion_modelos"]
+            if fila["modelo"] == ganador and fila["particion"] == "prueba_espaciotemporal"
         )
-        filas.append({
-            "cultivo": cultivo,
-            "version": version,
-            "esquema_compatible": esquema_compatible,
-            **espacial,
-        })
+        filas.append(
+            {
+                "cultivo": cultivo,
+                "version": version,
+                "esquema_compatible": esquema_compatible,
+                **espacial,
+            }
+        )
     tabla = pd.DataFrame(filas)
     if tabla.empty:
         return tabla
-    tabla["elegible"] = (
-        tabla["esquema_compatible"] & tabla["r2"].ge(r2_espacial_minimo)
-    )
+    tabla["elegible"] = tabla["esquema_compatible"] & tabla["r2"].ge(r2_espacial_minimo)
     return tabla.sort_values("r2", ascending=False).reset_index(drop=True)
 
 
@@ -76,16 +74,20 @@ def construir_matriz_potencial(
 
     conteo = (
         historia.groupby([*CLAVES_BLOQUE, "Nomcultivo"], observed=True)["Anio"]
-        .nunique().rename("anios_historia").reset_index()
+        .nunique()
+        .rename("anios_historia")
+        .reset_index()
     )
     base = historia.loc[historia["Anio"].eq(anio_base)].copy()
     superficies = (
-        base.groupby([*CLAVES_BLOQUE, "Nomcultivo"], as_index=False, observed=True)
-        ["Cosechada"].sum().rename(columns={"Cosechada": "superficie_base_ha"})
+        base.groupby([*CLAVES_BLOQUE, "Nomcultivo"], as_index=False, observed=True)["Cosechada"]
+        .sum()
+        .rename(columns={"Cosechada": "superficie_base_ha"})
     )
     superficies_bloque = (
-        superficies.groupby(CLAVES_BLOQUE, as_index=False, observed=True)
-        ["superficie_base_ha"].sum().rename(columns={"superficie_base_ha": "superficie_bloque_ha"})
+        superficies.groupby(CLAVES_BLOQUE, as_index=False, observed=True)["superficie_base_ha"]
+        .sum()
+        .rename(columns={"superficie_base_ha": "superficie_bloque_ha"})
     )
 
     reciente = historia.loc[historia["Anio"].between(*anios_clima)].copy()
@@ -93,20 +95,22 @@ def construir_matriz_potencial(
         reciente
         # Las variables de historial son propias del cultivo. Conservar esta
         # clave evita asignar a un cultivo la trayectoria productiva de otro.
-        .drop_duplicates([*CLAVES_BLOQUE, "Nomcultivo", "Anio"])
-        .copy()
+        .drop_duplicates([*CLAVES_BLOQUE, "Nomcultivo", "Anio"]).copy()
     )
     candidatos = conteo.loc[
-        conteo["Nomcultivo"].isin(cultivos)
-        & conteo["anios_historia"].ge(minimo_anios_historia)
+        conteo["Nomcultivo"].isin(cultivos) & conteo["anios_historia"].ge(minimo_anios_historia)
     ].copy()
     # Toda asignacion observada en el anio base se conserva para garantizar
     # que la solucion inicial siempre sea factible.
-    candidatos = pd.concat([
-        candidatos,
-        superficies[[*CLAVES_BLOQUE, "Nomcultivo"]].assign(anios_historia=0),
-    ]).sort_values("anios_historia").drop_duplicates(
-        [*CLAVES_BLOQUE, "Nomcultivo"], keep="last"
+    candidatos = (
+        pd.concat(
+            [
+                candidatos,
+                superficies[[*CLAVES_BLOQUE, "Nomcultivo"]].assign(anios_historia=0),
+            ]
+        )
+        .sort_values("anios_historia")
+        .drop_duplicates([*CLAVES_BLOQUE, "Nomcultivo"], keep="last")
     )
 
     predicciones = []
@@ -124,8 +128,7 @@ def construir_matriz_potencial(
         X, _ = separar_xy(evaluacion.assign(Rendimiento=1.0))
         evaluacion["rendimiento_predicho"] = np.maximum(modelo.predict(X), 0)
         predicciones.append(
-            evaluacion.groupby([*CLAVES_BLOQUE, "Nomcultivo"], as_index=False, observed=True)
-            .agg(
+            evaluacion.groupby([*CLAVES_BLOQUE, "Nomcultivo"], as_index=False, observed=True).agg(
                 rendimiento_esperado=("rendimiento_predicho", "mean"),
                 rendimiento_desviacion=("rendimiento_predicho", "std"),
                 anios_clima=("Anio", "nunique"),
@@ -145,9 +148,9 @@ def optimizar_intercambios(matriz: pd.DataFrame) -> tuple[np.ndarray, dict]:
     """Maximiza toneladas manteniendo areas por bloque y cultivo-ciclo-modalidad."""
     datos = matriz.reset_index(drop=True).copy()
     bloques = pd.factorize(pd.MultiIndex.from_frame(datos[CLAVES_BLOQUE]))[0]
-    productos = pd.factorize(pd.MultiIndex.from_frame(
-        datos[["Nomcultivo", "Nomcicloproductivo", "Nommodalidad"]]
-    ))[0]
+    productos = pd.factorize(
+        pd.MultiIndex.from_frame(datos[["Nomcultivo", "Nomcicloproductivo", "Nommodalidad"]])
+    )[0]
     n_bloques = bloques.max() + 1
     n_productos = productos.max() + 1
     columnas = np.arange(len(datos))
@@ -190,7 +193,9 @@ def crear_escenarios(
 ) -> pd.DataFrame:
     """Interpola entre la distribucion observada y la optima factible."""
     proporciones = proporciones or {
-        "conservador": 0.10, "intermedio": 0.25, "exploratorio": 0.40,
+        "conservador": 0.10,
+        "intermedio": 0.25,
+        "exploratorio": 0.40,
     }
     salida = matriz.copy()
     base = salida["superficie_base_ha"].to_numpy()

@@ -1,13 +1,12 @@
 """Construccion de activos compactos para el storytelling web."""
 
 from __future__ import annotations
-
+from proyecto_agronomia.config import PROJ_ROOT
 import csv
 import json
 from pathlib import Path
 from statistics import median
 
-PROJ_ROOT = Path(__file__).resolve().parents[1]
 RUTA_HISTORIAL = PROJ_ROOT / "data" / "processed" / "agricultura_clima_edafologia_historial_2003_2025.csv"
 RUTA_COORDENADAS = PROJ_ROOT / "data" / "interim" / "inegi" / "municipios_coordenadas_inegi.csv"
 RUTA_ESTADOS = PROJ_ROOT / "data" / "interim" / "inegi" / "estados_mexico_inegi.geojson"
@@ -88,9 +87,16 @@ def exportar_estabilidad_storytelling(
 
     ultimos = {}
     columnas = {
-        "cvegeo", "Anio", "Nomcultivo", "Nomunidad", "Nomestado",
-        "Nomcicloproductivo", "Nommodalidad", "rendimiento_hist_anios",
-        "rendimiento_hist_media", "rendimiento_hist_cv",
+        "cvegeo",
+        "Anio",
+        "Nomcultivo",
+        "Nomunidad",
+        "Nomestado",
+        "Nomcicloproductivo",
+        "Nommodalidad",
+        "rendimiento_hist_anios",
+        "rendimiento_hist_media",
+        "rendimiento_hist_cv",
     }
     with Path(ruta_historial).open(encoding="utf-8-sig", newline="") as archivo:
         lector = csv.DictReader(archivo)
@@ -127,11 +133,17 @@ def exportar_estabilidad_storytelling(
     cultivos = {}
     for (cultivo, cvegeo), valores in municipal.items():
         longitud, latitud, municipio = coordenadas[cvegeo]
-        cultivos.setdefault(cultivo, []).append([
-            longitud, latitud, round(median(valores["cv"]), 4),
-            int(max(valores["anios"])), round(median(valores["rendimiento"]), 3),
-            municipio, valores["estado"],
-        ])
+        cultivos.setdefault(cultivo, []).append(
+            [
+                longitud,
+                latitud,
+                round(median(valores["cv"]), 4),
+                int(max(valores["anios"])),
+                round(median(valores["rendimiento"]), 3),
+                municipio,
+                valores["estado"],
+            ]
+        )
     cultivos = dict(sorted(cultivos.items(), key=lambda item: (-len(item[1]), item[0])))
     contenido = {
         "minimo_anios": minimo_anios,
@@ -142,7 +154,8 @@ def exportar_estabilidad_storytelling(
     ruta_salida.parent.mkdir(parents=True, exist_ok=True)
     ruta_salida.write_text(
         "window.ESTABILIDAD_CULTIVOS = "
-        + json.dumps(contenido, ensure_ascii=False, separators=(",", ":")) + ";\n",
+        + json.dumps(contenido, ensure_ascii=False, separators=(",", ":"))
+        + ";\n",
         encoding="utf-8",
     )
     return ruta_salida

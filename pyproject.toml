@@ -46,17 +46,17 @@ dependencies = [
 
 [tool.ruff]
 line-length = 99
-src = ["src/proyecto_agronomia",
-"src/datasets",
-"src/modeling",
-"src/proyecto_agronomia",]
+src = ["src"]
 
-include = ["pyproject.toml", "proyecto_agronomia/**/*.py"]
+include = ["pyproject.toml", "src/**/*.py"]
 
 [tool.ruff.lint]
 extend-select = ["I"]  # Add import sorting
 
 [tool.ruff.lint.isort]
-known-first-party = ["src"]
+known-first-party = ["proyecto_agronomia", "datasets", "processing", "modeling"]
 force-sort-within-sections = true
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["typer.Option", "typer.Argument"]
 

@@ -9,16 +9,27 @@ geográficos y climáticos asociados con el éxito de la producción
 agrícola en los municipios de México durante el periodo **2003–2025**.
 
 El proyecto utiliza la estructura de **Cookiecutter Data Science v2**
-para mantener separadas las etapas de adquisición, procesamiento,
-análisis, visualización y modelado.
+para mantener separadas las etapas de los datos
+
+* Ingesta.
+* Preprocesamiento.
+* Calidad de Datos.
+* Limpieza.
+* Procesamiento.
+* Visualización.
 
 ---
 
-## Pregunta de investigación
+#Motivación 
 
-> ¿Qué factores agrícolas, geográficos y climáticos están asociados con
-> el éxito de la producción de un cultivo en los municipios de México
-> entre 2003 y 2025?
+México, según el DGSIAP, es el décimo productor agrícola a nivel mundial. Sin embargo, resulta curioso como paises como paises como Indonesia, Pakistan y Nigeria, siendo más pequeños, producen mayor cantidad. Considerando que Nigeria produce $30\%$ más que México siendo $50\%$ más pequeño motiva investigar si México tiene posibilidad a aumentar.
+
+Considerando lo anterior, en este analisis responderemos el siguiente cuestionamiento.
+
+Pregunta de investigación
+
+> ¿Es posible aumentar la producción agricola anual aprovechando mejor la distribución de los cultivos?
+
 
 Como variable inicial para representar el resultado de la producción
 agrícola se considera la proporción de superficie sembrada que logra
@@ -59,13 +70,13 @@ Se utiliza un archivo para cada año del periodo 2003–2025.
 
 Los archivos originales se almacenan en:
 
-```text
+```{text}
 data/raw/agricultura/
 ```
 
 con una estructura como:
 
-```text
+```{text}
 agricola_2003.csv
 agricola_2004.csv
 ...
@@ -429,45 +440,28 @@ notebooks/integracion_agricultura_clima.ipynb
 
 # Reproducibilidad
 
-## Crear el entorno virtual
+Como paso elemntal está en clonar el proyecto. 
 
-```bash
-python -m venv .venv
+```{bash}
+git clone https://github.com/MCDagro3/proyecto_agronomia
 ```
 
-En Windows PowerShell:
+Una vez clonado el proyecto. Para la replicación de nuestro necesitaremos
 
-```powershell
-.venv\Scripts\Activate.ps1
-```
+* uv
+* Python. (Si no está instalado, uv se encargaŕa de instalarlo)
+
+
+Además de seguir los siguientes pasos. 
 
 ## Instalar dependencias
 
+Dentro de la carpeta del proyecto vamos a construir el entorno virtual .venv.
+
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
-El proyecto se instala como paquete editable mediante la entrada:
-
-```text
--e .
-```
-
-incluida en `requirements.txt`.
-
-Esto permite utilizar las funciones del proyecto directamente desde
-las notebooks:
-
-```python
-from proyecto_agronomia.dataset import descargar_datos_agricolas
-
-from proyecto_agronomia.features import (
-    construir_historico_agricola,
-    generar_features_agricolas,
-)
-```
-
----
 
 # Objetivo de modelado
 
@@ -497,7 +491,6 @@ Entre las posibles variables explicativas se encuentran:
 La selección definitiva de variables y modelos se realizará después de
 completar la integración, el análisis exploratorio y la evaluación de
 posibles problemas de fuga de información.
-
 
 
 # Project Organization
@@ -552,22 +545,19 @@ posibles problemas de fuga de información.
 │
 ├── tests/
 │
-└── proyecto_agronomia/     <- Reusable Python source code
-    ├── __init__.py
-    ├── config.py            <- Paths and project configuration
-    ├── dataset.py           <- Data acquisition
-    ├── datasets/
+└── src/                     <- Reusable Python source code
+    ├── agro/                <- Auto Project Scripts
+    ├── proyecto_agronomia/  <- Configuration Project
+    ├── datasets/            <- Data acquisition
     │   └── clima_nasa.py    <- NASA POWER download and aggregation
-    ├── features.py          <- Transformations and feature engineering
-    ├── plots.py             <- Visualization functions
-    │
-    └── modeling/
+    |   processing/          <- Data processing
+    │   modeling/            <- Crops Distribution Model
         ├── __init__.py
         ├── train.py         <- Model training
         └── predict.py       <- Model inference
-```
+```    
 
----
+
 
 ## Licencia
 
