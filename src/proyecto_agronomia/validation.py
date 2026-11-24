@@ -40,7 +40,7 @@ REGLAS_ADVERTENCIA = {
     "cvegeo_un_solo_Nommunicipio",
     "Idcultivo_un_solo_Nomcultivo",
     "rendimiento_consistente",
-    "suelo_cubre_95pct_municipio",
+    "suelo_cubre_95pct_area",
 }
 
 # Columnas donde un faltante es esperado, con la razón.
@@ -266,6 +266,9 @@ esquema_edafologia = pa.DataFrameSchema(
         "grupos_suelo_n": pa.Column(int, pa.Check.ge(1)),
         "textura_dominante": pa.Column(float, pa.Check.isin([1, 2, 3]), nullable=True),
         "textura_dominante_pct": pa.Column(float, pa.Check.in_range(0, 100), nullable=True),
+        "area_mascara_ha": pa.Column(float, pa.Check.ge(0)),
+        "suelo_fuente": pa.Column(checks=pa.Check.isin(["mascara", "agricola", "municipal"])),
+        "mascara": pa.Column(checks=pa.Check.isin(["anual", "perenne", "pastizal"])),
     },
     checks=[
         _regla(
@@ -275,8 +278,14 @@ esquema_edafologia = pa.DataFrameSchema(
         ),
         _regla(
             lambda df: df.filter(regex=r"^suelo_pct_").sum(axis=1).ge(95),
-            "suelo_cubre_95pct_municipio",
-            "La capa de suelo cubre al menos 95 % del municipio (falla en costas; esperado).",
+            "suelo_cubre_95pct_area",
+            "La capa de suelo cubre al menos 95 % del área de referencia (máscara agrícola "
+            "MapBiomas o, en el respaldo, el municipio). Falla en costas; esperado.",
+        ),
+        _regla(
+            lambda df: df["suelo_fuente"].ne("mascara") | df["area_mascara_ha"].ge(1),
+            "mascara_con_area_minima",
+            "Solo se usa la composición de la máscara si mide al menos 1 ha.",
         ),
         _regla(
             _dominante_es_el_maximo,
