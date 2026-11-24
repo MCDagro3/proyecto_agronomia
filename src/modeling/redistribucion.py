@@ -24,7 +24,7 @@ CLAVES_BLOQUE = ["cvegeo", "Nomcicloproductivo", "Nommodalidad"]
 
 def cultivos_con_modelo_valido(
     cultivos: list[str],
-    version: str = "v1_principales",
+    version: str = "v2_modelado",
     r2_espacial_minimo: float = 0.50,
 ) -> pd.DataFrame:
     """Filtra artefactos por R2 de la prueba espacio-temporal."""
@@ -63,7 +63,7 @@ def cultivos_con_modelo_valido(
 def construir_matriz_potencial(
     datos_principales: pd.DataFrame,
     cultivos: list[str],
-    version: str = "v1_principales",
+    version: str = "v2_modelado",
     anio_base: int = 2025,
     anios_clima: tuple[int, int] = (2022, 2025),
     minimo_anios_historia: int = 3,
