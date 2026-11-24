@@ -9,17 +9,48 @@
 </head>
 <body>
   <header class="chrome">
-    <a class="brand" href="#agricultura"><span class="brand-mark">MX</span><span>Integración + exploración</span></a>
-    <div class="chrome-actions"><span id="counter">01 / 10</span><button id="fullscreen" type="button">Pantalla completa</button></div>
+    <a class="brand" href="#calidad"><span class="brand-mark">MX</span><span>Integración + exploración</span></a>
+    <div class="chrome-actions"><span id="counter">01 / 12</span><button id="fullscreen" type="button">Pantalla completa</button></div>
     <div class="progress"><span id="progress-bar"></span></div>
   </header>
   <nav class="rail" aria-label="Secciones">
-    <a href="#agricultura" aria-label="Agricultura"></a><a href="#clima" aria-label="Clima"></a><a href="#suelo" aria-label="Suelo"></a><a href="#resultado" aria-label="Resultado final"></a><a href="#union" aria-label="Unión"></a><a href="#historial" aria-label="Historial"></a><a href="#territorio" aria-label="Territorio"></a><a href="#relaciones" aria-label="Relaciones"></a><a href="#estabilidad" aria-label="Estabilidad"></a><a href="#conclusion" aria-label="Conclusión"></a>
+    <a href="#calidad" aria-label="Calidad de datos"></a><a href="#agricultura" aria-label="Agricultura"></a><a href="#clima" aria-label="Clima"></a><a href="#suelo" aria-label="Suelo"></a><a href="#resultado" aria-label="Resultado final"></a><a href="#historial" aria-label="Historial"></a><a href="#territorio" aria-label="Territorio"></a><a href="#relaciones" aria-label="Relaciones"></a><a href="#estabilidad" aria-label="Estabilidad"></a><a href="#modelos" aria-label="Modelos"></a><a href="#redistribucion" aria-label="Redistribución"></a><a href="#conclusion" aria-label="Conclusión"></a>
   </nav>
 
   <main>
+    <section id="calidad" class="slide quality-slide">
+      <div class="section-number light">01 · Calidad antes del análisis</div>
+      <div class="quality-layout">
+        <div class="quality-intro">
+          <h2>Antes de buscar patrones, intentamos romper el dataset</h2>
+          <p class="lead">Una auditoría reproducible con Pandera revisó integridad, reglas agrícolas, rangos climáticos, composición del suelo, historial sin fuga temporal y valores faltantes. La libreta reporta; no corrige ni borra silenciosamente.</p>
+          <div class="quality-kpis">
+            <article><strong>825,089</strong><span>registros conservados</span></article>
+            <article><strong>98</strong><span>columnas auditadas</span></article>
+            <article><strong>2,452</strong><span>municipios con producción</span></article>
+            <article><strong>0</strong><span>filas duplicadas completas</span></article>
+          </div>
+        </div>
+        <div class="quality-audit">
+          <div class="quality-schema"><span>Agricultura</span><b>66 OK</b><i>4 fallas · 4 advertencias</i></div>
+          <div class="quality-schema"><span>Clima NASA</span><b>16 OK</b><i>sin fallas</i></div>
+          <div class="quality-schema"><span>Edafología</span><b>18 OK</b><i>1 advertencia costera</i></div>
+          <div class="quality-schema"><span>Historial</span><b>14 OK</b><i>sin fuga temporal</i></div>
+          <div class="quality-result">
+            <small>Hallazgo accionable</small>
+            <strong>6 registros únicos</strong>
+            <p>presentan inconsistencias estrictas de superficie, volumen o valor; se conservan para auditoría y se excluyen del modelado.</p>
+          </div>
+        </div>
+      </div>
+      <div class="quality-foot">
+        <span><b>Faltantes:</b> todos explicados por ausencia de cosecha, producción, historia suficiente o textura municipal.</span>
+        <span><b>Advertencias:</b> cambios oficiales de nombres, perennes siniestrados y 31 municipios costeros con cobertura edafológica menor a 95 %.</span>
+      </div>
+    </section>
+
     <section id="agricultura" class="slide agriculture-slide">
-      <div class="section-number">01 · Limpieza e integridad agrícola</div>
+      <div class="section-number">02 · Limpieza e integridad agrícola</div>
       <h2>Los datos agrícolas no coincidían con su propio diccionario</h2>
       <p class="lead dark">Se publica un archivo por año agrícola: 23 archivos entre 2003 y 2025, con 825,089 registros. Entre años cambiaron los encabezados, los tipos y la forma de escribir el cultivo, así que se corrigieron contra el diccionario de datos antes de analizarlos.</p>
       <div class="fix-grid">
@@ -32,7 +63,7 @@
     </section>
 
     <section id="clima" class="slide climate-slide">
-      <div class="section-number light">02 · Clima por ciclo productivo</div>
+      <div class="section-number light">03 · Clima por ciclo productivo</div>
       <div class="climate-heading"><div><h2>Del dato diario de NASA al clima de cada ciclo</h2><p>El clima de 2002 aporta octubre–diciembre para construir Otoño–Invierno 2003. Cada ciclo recibe su propia ventana de meses.</p></div><div class="climate-kpi"><strong>713,664</strong><span>registros mensuales: 2,478 municipios × 24 años × 12 meses</span></div></div>
       <div class="climate-view-tabs"><button class="active" data-climate-view="method">Ventanas agrícolas</button><button data-climate-view="animation">Clima nacional</button></div>
       <div id="climate-method" class="climate-panel active">
@@ -54,7 +85,7 @@
     </section>
 
     <section id="suelo" class="slide soil-slide">
-      <div class="section-number">03 · Edafología: traslape, SA y fases faltantes</div>
+      <div class="section-number">04 · Edafología: traslape, SA y fases faltantes</div>
       <div class="soil-layout">
         <div><h2>Integración de los datos Edafológicos</h2><p class="lead dark">La capa de INEGI (Serie III, 1:250 000) son polígonos que cruzan municipios. Se intersectaron con ellos en una proyección métrica (EPSG:6372) para medir cuánta superficie ocupa cada categoría, y el resumen se guardó como caché.</p><div class="soil-facts"><span><b>2,478</b> municipios resumidos</span><span><b>1 fila</b> por cvegeo</span><span><b>10</b> columnas de suelo</span></div></div>
         <div class="soil-notes">
@@ -66,7 +97,7 @@
     </section>
 
     <section id="resultado" class="slide final">
-      <div class="section-number light">04 · Resultado final</div>
+      <div class="section-number light">05 · Resultado final</div>
       <div class="final-grid">
         <div><h2>Producción, clima y suelo en una sola tabla</h2><p class="lead">Cada fila conserva su granularidad agrícola (municipio, año, cultivo, ciclo, modalidad y unidad) y recibe el clima del ciclo y el suelo del municipio.</p>
           <div class="file-card"><code>agricultura_clima_edafologia_2003_2025.csv</code><strong>825,089 filas × 68 columnas</strong><span>25 agrícolas + 33 climáticas + 10 edafológicas</span></div></div>
@@ -80,7 +111,7 @@
     </section>
 
     <section id="historial" class="slide history-slide">
-      <div class="section-number">05 · Memoria productiva sin mirar el futuro</div>
+      <div class="section-number">06 · Memoria productiva sin mirar el futuro</div>
       <div class="history-grid">
         <div><h2>El año actual sólo aprende de años anteriores</h2><p class="lead dark">Para cada municipio, cultivo, ciclo, modalidad y unidad se desplazan los rendimientos antes de calcular estadísticas. Así 2020 nunca utiliza información de 2020 o posterior.</p></div>
         <div class="history-track"><span>2017</span><span>2018</span><span>2019</span><strong>2020</strong><div class="history-brace">historial disponible ─────────┘</div></div>
@@ -89,13 +120,13 @@
     </section>
 
     <section id="territorio" class="slide territory-slide">
-      <div class="section-number light">06 · El territorio cambia con el tiempo y el ciclo</div>
+      <div class="section-number light">07 · El territorio cambia con el tiempo y el ciclo</div>
       <div class="territory-heading"><div><h2>El cultivo dominante no es una fotografía fija</h2><p>La animación anual revela regiones persistentes; la vista por ciclos muestra que Otoño–Invierno, Primavera–Verano y Perennes ocupan geografías distintas.</p></div><div class="media-tabs"><button class="active" data-media="annual">Anual</button><button data-media="cycles">Por ciclos</button></div></div>
       <figure class="wide-media"><img id="territory-media" src="../figures/cultivos_anual_2003_2025.gif" alt="Animación anual de cultivos dominantes en México"><figcaption id="territory-caption">Cultivo dominante municipal · evolución anual 2003—2025</figcaption></figure>
     </section>
 
     <section id="relaciones" class="slide relations-slide">
-      <div class="section-number">07 · Correlación como mapa de preguntas</div>
+      <div class="section-number">08 · Correlación como mapa de preguntas</div>
       <div class="relations-layout">
         <div><h2>Las relaciones fuertes no siempre son descubrimientos</h2><p class="lead dark">Superficie sembrada y cosechada comparten definición; producción y valor también. La matriz ayuda a detectar estructura, pero no demuestra causalidad.</p><div class="relation-kpis"><article><strong>0.96</strong><span>sembrada ↔ cosechada</span></article><article><strong>0.88</strong><span>producción ↔ valor</span></article><article><strong>0.98</strong><span>rendimiento ↔ historial</span></article></div><p class="caution">Por eso se añadieron matrices seleccionables por cultivo y asociaciones mixtas para variables edafológicas categóricas.</p></div>
         <figure class="media-card correlation"><img src="../figures/matriz_correlacion_agricola.png" alt="Matriz de correlación agrícola de Spearman"><figcaption>Correlación nacional de Spearman · asociación no implica causalidad</figcaption></figure>
@@ -103,7 +134,7 @@
     </section>
 
     <section id="estabilidad" class="slide stability-slide">
-      <div class="section-number light">08 · Rendimiento, estabilidad y riesgo</div>
+      <div class="section-number light">09 · Rendimiento, estabilidad y riesgo</div>
       <div class="stability-heading"><div><h2>Producir más no significa producir de forma estable</h2><p>El coeficiente de variación distingue municipios consistentes de municipios volátiles. Los siniestros y anomalías climáticas aportan otra lectura del riesgo.</p></div><div class="media-tabs secondary"><button class="active" data-evidence="stability">Estabilidad</button><button data-evidence="risk">Siniestros</button><button data-evidence="series">Series</button></div></div>
       <div id="evidence-stability" class="evidence-panel active">
         <div class="stability-control"><label for="stability-crop">Cultivo</label><select id="stability-crop" aria-label="Seleccionar cultivo para el mapa de estabilidad"></select></div>
@@ -116,11 +147,45 @@
       <div id="evidence-series" class="evidence-panel"><figure class="wide-media evidence-media"><img src="../figures/series_superficie_produccion_rendimiento.png" alt="Series de superficie, producción y rendimiento"><figcaption>Trayectoria productiva de los cultivos principales</figcaption></figure></div>
     </section>
 
+    <section id="modelos" class="slide models-slide">
+      <div class="section-number">10 · Modelos de rendimiento</div>
+      <div class="models-layout">
+        <div>
+          <h2>Un modelo por cultivo, validado en tiempo y territorio</h2>
+          <p class="lead dark">El entrenamiento utiliza únicamente registros aptos, identifica cada cultivo por su código estable y predice rendimiento con clima del ciclo, suelo e historia productiva previa. El futuro y municipios reservados quedan fuera del ajuste para medir generalización.</p>
+          <div class="model-kpis">
+            <article><strong>85</strong><span>modelos <code>v2_modelado</code> entrenados</span></article>
+            <article><strong>72</strong><span>superan R² espacial de 0.50</span></article>
+            <article><strong>2022—2025</strong><span>periodo de prueba temporal</span></article>
+          </div>
+        </div>
+        <div class="model-pipeline">
+          <article><small>Entrada</small><b>Dataset para modelado</b><span>Ausencias homologadas, banderas de calidad e historial sin fuga.</span></article>
+          <article><small>Comparación</small><b>Tres candidatos</b><span>Mediana, HistGradientBoosting y Random Forest con objetivo en escala logarítmica.</span></article>
+          <article><small>Validación</small><b>Temporal + espacio-temporal</b><span>Se elige por RMSE en municipios reservados y años recientes.</span></article>
+          <article><small>Registro</small><b>Artefactos reproducibles</b><span><code>model.joblib</code>, métricas, metadata y esquema de variables por cultivo.</span></article>
+        </div>
+      </div>
+      <div class="model-rule"><b>Regla para el escenario:</b> sólo participan cultivos cuyo modelo conserva el esquema esperado y supera el umbral de calidad espacial.</div>
+    </section>
+
+    <section id="redistribucion" class="slide redistribution-slide">
+      <div class="section-number light">11 · Intercambios territoriales condicionados</div>
+      <div class="redistribution-heading">
+        <div><h2>Intercambiar superficie, no expandir la frontera agrícola</h2><p>La optimización conserva la superficie de cada municipio–ciclo–modalidad y la superficie nacional de cada cultivo. El escenario intermedio recorre 25 % del camino entre la distribución observada y el óptimo estimado.</p></div>
+        <div class="redistribution-kpis"><article><strong>+6.48 %</strong><span>producción predicha</span></article><article><strong>1.89 M ha</strong><span>superficie reasignada</span></article><article><strong>146</strong><span>municipios cambian de dominante</span></article></div>
+      </div>
+      <div class="redistribution-tabs"><button class="active" data-redistribution="national">Mapa nacional</button><button data-redistribution="cycles">Detalle por ciclo</button></div>
+      <div id="redistribution-national" class="redistribution-panel active"><figure><img src="../figures/redistribucion_cultivos_original_vs_intermedio.png" alt="Comparación de la distribución original y el escenario intermedio de cultivos"><figcaption>Distribución original 2025 frente al escenario intermedio · 146 municipios cambian de cultivo dominante</figcaption></figure></div>
+      <div id="redistribution-cycles" class="redistribution-panel"><figure><img src="../figures/redistribucion_cultivos_por_ciclo_intermedio.png" alt="Redistribución de cultivos separada por ciclo productivo"><figcaption>Otoño–Invierno: 277 cambios · Primavera–Verano: 110 · Perennes: 162</figcaption></figure></div>
+      <p class="scenario-caution">Potencial estadístico, no receta agronómica: todavía no incorpora costos, agua disponible, demanda, infraestructura, rotaciones ni decisiones de productores.</p>
+    </section>
+
     <section id="conclusion" class="slide final">
-      <div class="section-number light">09 · Lo que queda listo</div>
+      <div class="section-number light">12 · Lo que queda listo</div>
       <div class="final-grid">
         <div><h2>Un dataset para preguntar mejor, no para saltar a conclusiones</h2><p class="lead">La integración conserva trazabilidad y evita fuga temporal. La exploración identifica señales que después deben validarse con modelos, incertidumbre y conocimiento local.</p></div>
-        <div class="deliverables"><article><b>Dataset base</b><code>agricultura_clima_edafologia_2003_2025.csv</code><span>68 columnas</span></article><article><b>Dataset histórico</b><code>agricultura_clima_edafologia_historial_2003_2025.csv</code><span>73 columnas</span></article><article><b>Evidencia visual</b><code>reports/figures/</code><span>mapas · GIF · matrices · series</span></article></div>
+        <div class="deliverables"><article><b>Dataset base</b><code>agricultura_clima_edafologia_2003_2025.csv</code><span>integración trazable</span></article><article><b>Dataset para modelado</b><code>agricultura_modelado_2003_2025.csv</code><span>calidad · historial · objetivo homogéneo</span></article><article><b>Modelos registrados</b><code>models/rendimiento/</code><span>artefactos y métricas por cultivo</span></article><article><b>Escenarios</b><code>redistribucion_cultivos_principales_2025.csv</code><span>base · conservador · intermedio · exploratorio</span></article></div>
       </div>
       <div class="limits"><span>2020—2021: sólo 80 cultivos registrados</span><i>·</i><span>asociación ≠ causalidad</span><i>·</i><span>suelo dominante simplifica heterogeneidad</span><i>·</i><span>el modelo no sustituye decisión agronómica</span></div>
       <footer><span>Integración y análisis exploratorio · Proyecto Agronomía</span><span>2026</span></footer>

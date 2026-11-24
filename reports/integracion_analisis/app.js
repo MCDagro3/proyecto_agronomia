@@ -10,7 +10,7 @@ function activate(index) {
   dots.forEach((dot, i) => dot.classList.toggle('active', i === current));
   counter.textContent = `${String(current + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
   progress.style.width = `${((current + 1) / slides.length) * 100}%`;
-  const dark = ['hero', 'climate-slide', 'join-slide', 'territory-slide', 'stability-slide', 'final'].some(name => slides[current].classList.contains(name));
+  const dark = ['hero', 'quality-slide', 'climate-slide', 'join-slide', 'territory-slide', 'stability-slide', 'redistribution-slide', 'final'].some(name => slides[current].classList.contains(name));
   document.querySelector('.chrome').style.color = dark ? '#f4efe2' : '#183832';
   document.querySelector('.rail').style.color = dark ? '#f4efe2' : '#183832';
 }
@@ -57,6 +57,13 @@ document.querySelectorAll('[data-climate-view]').forEach(button => button.addEve
   document.querySelectorAll('[data-climate-view]').forEach(item => item.classList.toggle('active', item === button));
   document.querySelectorAll('.climate-panel').forEach(panel => {
     panel.classList.toggle('active', panel.id === `climate-${button.dataset.climateView}`);
+  });
+}));
+
+document.querySelectorAll('[data-redistribution]').forEach(button => button.addEventListener('click', () => {
+  document.querySelectorAll('[data-redistribution]').forEach(item => item.classList.toggle('active', item === button));
+  document.querySelectorAll('.redistribution-panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === `redistribution-${button.dataset.redistribution}`);
   });
 }));
 
