@@ -1,7 +1,19 @@
 # Ingesta de Datos
 
-from proyecto_agronomia.config import AGRICULTURA_RAW_DIR, ANIOS, ANIO_FINAL, ANIO_INICIAL
+from proyecto_agronomia.config import (
+    AGRICULTURA_RAW_DIR,
+    ANIOS,
+    ANIOS_MAPBIOMAS,
+    ANIO_FINAL,
+    ANIO_INICIAL,
+    MAPBIOMAS_RAW_DIR,
+)
 from datasets.agricultura import descargar_datos_agricolas, descargar_diccionario_agricola
+from datasets.mapbiomas import (
+    CLAVE_NACIONAL,
+    descargar_mapbiomas,
+    listar_rasters_mapbiomas,
+)
 from processing.integracion_climatica import puntos_representativos_municipales
 from datasets.inegi import obtener_municipios_inegi
 from datasets.clima_nasa import descargar_clima_nasa_mensual_por_celdas
@@ -73,4 +85,20 @@ if __name__ == "__main__":
     print(
         f"Directorio de datos edafológicos: "
         f"{ruta_edafologia}"
+    )
+
+    # MapBiomas: cobertura y uso del suelo.
+    # Incluye 2002 porque la máscara agrícola del año t utiliza t-1, t y t+1.
+    print("Información edafológica descargada. Concluimos con MapBiomas.")
+    descargar_mapbiomas(anios=ANIOS_MAPBIOMAS)
+    rasters_mapbiomas = listar_rasters_mapbiomas(
+        directorio=MAPBIOMAS_RAW_DIR,
+        anios=ANIOS_MAPBIOMAS,
+    )[CLAVE_NACIONAL]
+
+    assert set(rasters_mapbiomas) == set(ANIOS_MAPBIOMAS)
+    print(
+        "MapBiomas completado: "
+        f"{len(rasters_mapbiomas)} rasters nacionales "
+        f"({min(rasters_mapbiomas)}-{max(rasters_mapbiomas)})."
     )
