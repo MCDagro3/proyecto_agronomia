@@ -1,86 +1,100 @@
-#################################################################################
-# GLOBALS                                                                       #
-#################################################################################
+SHELL := /usr/bin/env bash
+.DEFAULT_GOAL := help
+ARGS ?=
 
-PROJECT_NAME = proyecto_agronomia
-PYTHON_VERSION = 3.12
-PYTHON_INTERPRETER = python
+.PHONY: help sync clean lint format test \
+	data data-agricultura data-inegi data-edafologia data-uso-suelo \
+	data-avance data-agroprograma data-mapbiomas \
+	features train predict run
 
 #################################################################################
 # COMMANDS                                                                      #
 #################################################################################
 
+## Show available commands
+help:
+	@awk '/^## / {desc = substr($$0, 4)} /^[a-zA-Z_-]+:/ {if (desc != "") {printf "%-25s %s\n", $$1, desc; desc = ""}}' $(MAKEFILE_LIST)
 
-## Install Python dependencies
-.PHONY: requirements
-requirements:
-	$(PYTHON_INTERPRETER) -m pip install -U pip
-	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
-	
+## Sync dependencies from uv.lock
+sync:
+	uv sync
 
-
-
-## Delete all compiled Python files
-.PHONY: clean
+## Remove caches
 clean:
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
+	find . -type d \( -name ".pytest_cache" -o -name ".ruff_cache" -o -name ".mypy_cache" \) -exec rm -rf {} +
 
-
-## Lint using ruff (use `make format` to do formatting)
-.PHONY: lint
+## Lint with ruff
 lint:
-	ruff format --check
-	ruff check
+	uv run ruff check src
+	uv run ruff format --check src
 
-## Format source code with ruff
-.PHONY: format
+## Format with ruff
 format:
-	ruff check --fix
-	ruff format
-
-
+	uv run ruff check --fix src
+	uv run ruff format src
 
 ## Run tests
-.PHONY: test
 test:
-	python -m pytest tests
-
-
-## Set up Python interpreter environment
-.PHONY: create_environment
-create_environment:
-	@bash -c "if [ ! -z `which virtualenvwrapper.sh` ]; then source `which virtualenvwrapper.sh`; mkvirtualenv $(PROJECT_NAME) --python=$(PYTHON_INTERPRETER); else mkvirtualenv.bat $(PROJECT_NAME) --python=$(PYTHON_INTERPRETER); fi"
-	@echo ">>> New virtualenv created. Activate with:\nworkon $(PROJECT_NAME)"
-	
-
-
+	uv run pytest
 
 #################################################################################
-# PROJECT RULES                                                                 #
+# DATA                                                                          #
 #################################################################################
 
+## Core downloads: agricultura + inegi + edafologia
+data: data-agricultura data-inegi data-edafologia
+	@echo "Descarga core terminada"
 
-## Make dataset
-.PHONY: data
-data: requirements
-	$(PYTHON_INTERPRETER) proyecto_agronomia/dataset.py
+## Download DGSIAP agricultural data + dictionary
+data-agricultura:
+	uv run python -m proyecto_agronomia.dataset agricultura
 
+## Download INEGI municipal/state geometries
+data-inegi:
+	uv run python -m proyecto_agronomia.dataset inegi
+
+## Download INEGI edafology data + dictionary
+data-edafologia:
+	uv run python -m proyecto_agronomia.dataset edafologia
+
+## Download INEGI land use/vegetation series
+data-uso-suelo:
+	uv run python -m proyecto_agronomia.dataset inegi-uso-suelo
+
+## Download DGSIAP crop progress report
+data-avance:
+	uv run python -m proyecto_agronomia.dataset dgsiap-avance
+
+## Download DGSIAP AgroPrograma intention report
+data-agroprograma:
+	uv run python -m proyecto_agronomia.dataset dgsiap-agroprograma
+
+## Process MapBiomas rasters to agricultural coverage
+data-mapbiomas:
+	uv run python -m proyecto_agronomia.dataset mapbiomas-procesar
 
 #################################################################################
-# Self Documenting Commands                                                     #
+# FEATURES                                                                      #
 #################################################################################
 
-.DEFAULT_GOAL := help
+## Build processed agricultural features dataset
+features:
+	uv run python -m proyecto_agronomia.features
 
-define PRINT_HELP_PYSCRIPT
-import re, sys; \
-lines = '\n'.join([line for line in sys.stdin]); \
-matches = re.findall(r'\n## (.*)\n[\s\S]+?\n([a-zA-Z_-]+):', lines); \
-print('Available rules:\n'); \
-print('\n'.join(['{:25}{}'.format(*reversed(match)) for match in matches]))
-endef
-export PRINT_HELP_PYSCRIPT
+#################################################################################
+# MODELING                                                                      #
+#################################################################################
 
-help:
-	@$(PYTHON_INTERPRETER) -c "${PRINT_HELP_PYSCRIPT}" < $(MAKEFILE_LIST)
+## Train and register a crop model (ARGS="--cultivo ...")
+train:
+	uv run python -m modeling.train $(ARGS)
+
+## Run model inference (ARGS="...")
+predict:
+	uv run python -m modeling.predict $(ARGS)
+
+## Run arbitrary command in project env: make run cmd="..."
+run:
+	uv run $(cmd)

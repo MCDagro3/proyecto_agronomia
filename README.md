@@ -9,16 +9,27 @@ geográficos y climáticos asociados con el éxito de la producción
 agrícola en los municipios de México durante el periodo **2003–2025**.
 
 El proyecto utiliza la estructura de **Cookiecutter Data Science v2**
-para mantener separadas las etapas de adquisición, procesamiento,
-análisis, visualización y modelado.
+para mantener separadas las etapas de los datos
+
+* Ingesta.
+* Preprocesamiento.
+* Calidad de Datos.
+* Limpieza.
+* Procesamiento.
+* Visualización.
 
 ---
 
-## Pregunta de investigación
+#Motivación 
 
-> ¿Qué factores agrícolas, geográficos y climáticos están asociados con
-> el éxito de la producción de un cultivo en los municipios de México
-> entre 2003 y 2025?
+México, según el DGSIAP, es el décimo productor agrícola a nivel mundial. Sin embargo, resulta curioso como paises como paises como Indonesia, Pakistan y Nigeria, siendo más pequeños, producen mayor cantidad. Considerando que Nigeria produce $30\%$ más que México siendo $50\%$ más pequeño motiva investigar si México tiene posibilidad a aumentar.
+
+Considerando lo anterior, en este analisis responderemos el siguiente cuestionamiento.
+
+Pregunta de investigación
+
+> ¿Es posible aumentar la producción agricola anual aprovechando mejor la distribución de los cultivos?
+
 
 Como variable inicial para representar el resultado de la producción
 agrícola se considera la proporción de superficie sembrada que logra
@@ -46,8 +57,8 @@ Esto representa un total de **23 años**.
 
 # Fuentes de datos
 
-El proyecto integra agricultura, clima, edafología, cobertura terrestre y
-geometrías municipales mediante cinco componentes de datos.
+El proyecto integra dos fuentes principales de información y una fuente
+geográfica auxiliar.
 
 ## 1. Datos agrícolas — Secretaría de Agricultura / DGSIAP
 
@@ -59,13 +70,13 @@ Se utiliza un archivo para cada año del periodo 2003–2025.
 
 Los archivos originales se almacenan en:
 
-```text
+```{text}
 data/raw/agricultura/
 ```
 
 con una estructura como:
 
-```text
+```{text}
 agricola_2003.csv
 agricola_2004.csv
 ...
@@ -189,7 +200,7 @@ el archivo mensual es la fuente climática procesada de mayor granularidad.
 3. Ejecutar la agregación con `EJECUTAR_AGREGACION_MENSUAL = True`.
 4. Validar las 12 observaciones mensuales por municipio y año.
 5. Cambiar la bandera a `False` después de generar el CSV.
-6. Ejecutar `notebooks/integracion_datasets.ipynb`.
+6. Ejecutar `notebooks/integracion_agricultura_clima.ipynb`.
 
 La integración no une directamente las 12 filas mensuales con cada registro
 agrícola, porque eso multiplicaría las observaciones. Primero transforma los
@@ -223,23 +234,6 @@ Se identificaron:
 La adquisición climática se realizó para los **2,478 municipios** disponibles
 en la capa nacional. La integración agrícola utiliza el subconjunto de claves
 municipales presente en los registros de producción.
-
----
-
-## 4. Edafología — INEGI
-
-La cartografía edafológica aporta el grupo y nombre del suelo, textura,
-porcentaje dominante, diversidad y composición municipal mediante columnas
-`suelo_pct_*`. La descarga se gestiona con `src/datasets/edafologia.py` y la
-integración espacial con `src/processing/integracion_edafologica.py`.
-
-## 5. Cobertura terrestre — MapBiomas México
-
-Los rasters anuales de MapBiomas 2002–2025 permiten calcular características
-edafológicas sobre máscaras coherentes con el sistema productivo: agricultura
-anual, agricultura perenne y pastizales. La integración conserva `mascara`,
-`area_mascara_ha` y `suelo_fuente` para hacer explícito si la caracterización
-proviene de la máscara específica, del área agrícola o del municipio completo.
 
 ---
 
@@ -277,9 +271,6 @@ Agregación municipio-año-mes             |
        Ventanas según ciclo productivo
                      |
                      v
-     Integración con edafología y MapBiomas
-                     |
-                     v
           Dataset analítico integrado
                      |
                      v
@@ -303,36 +294,6 @@ La unión final usa `cvegeo`, `Anio` y el ciclo productivo, con validación
 `many_to_one`. Las observaciones agrícolas conservan además cultivo,
 modalidad, superficies y variables de producción.
 
-La integración completa se ejecuta en:
-
-```text
-notebooks/integracion_datasets.ipynb
-```
-
-Esta notebook genera tres productos con **825,089 registros** cada uno:
-
-```text
-data/processed/agricultura_clima_2003_2025.csv
-data/processed/agricultura_clima_edafologia_2003_2025.csv
-data/processed/agricultura_clima_edafologia_historial_2003_2025.csv
-```
-
-El primer archivo integra agricultura y clima por ciclo productivo. El
-segundo agrega características edafológicas municipales y selecciona la
-cobertura de suelo de MapBiomas apropiada para cultivos anuales, perennes y
-pastizales. El tercero añade características históricas calculadas sin usar
-años futuros:
-
-- `rendimiento_hist_anios`;
-- `rendimiento_anio_anterior`;
-- `rendimiento_hist_media`;
-- `rendimiento_hist_desviacion`;
-- `rendimiento_hist_cv`.
-
-El archivo **con historial** es la fuente oficial de las notebooks de calidad
-de datos y análisis exploratorio. El archivo sin historial se conserva como
-producto intermedio para verificar la integración.
-
 ---
 
 # Procesamiento agrícola
@@ -340,8 +301,7 @@ producto intermedio para verificar la integración.
 Los archivos agrícolas históricos presentan diferencias de esquema y
 formato entre distintos años.
 
-El pipeline implementado en `src/proyecto_agronomia/features.py` y los
-módulos de `src/processing/` realiza:
+El pipeline implementado en `proyecto_agronomia/features.py` realiza:
 
 1. lectura de los archivos originales;
 2. normalización de nombres de columnas;
@@ -467,103 +427,52 @@ Validación municipio-año-mes
 La lógica reutilizable se encuentra en:
 
 ```text
-src/datasets/
-src/processing/
-src/proyecto_agronomia/
+proyecto_agronomia/datasets/clima_nasa.py
 ```
 
 La integración posterior se ejecuta en:
 
 ```text
-notebooks/integracion_datasets.ipynb
-```
-
-El orden recomendado de ejecución es:
-
-```text
-descargas / ingesta
-        ↓
-integracion_datasets.ipynb
-        ↓
-calidad_datos.ipynb
-        ↓
-analisis_exploratorio.ipynb
-        ↓
-preparacion_modelado.ipynb
-        ↓
-entrenamiento_cultivos_principales.ipynb
-        ↓
-redistribucion_cultivos.ipynb
-```
-
-Tanto `calidad_datos.ipynb` como `analisis_exploratorio.ipynb` utilizan:
-
-```text
-data/processed/agricultura_clima_edafologia_historial_2003_2025.csv
-```
-
-Antes del entrenamiento, `preparacion_modelado.ipynb` genera el producto
-específico para modelado:
-
-```text
-data/processed/agricultura_modelado_2003_2025.csv
+notebooks/integracion_agricultura_clima.ipynb
 ```
 
 ---
 
 # Reproducibilidad
 
-## Crear el entorno virtual
+Como paso elemntal está en clonar el proyecto. 
 
-```bash
-python -m venv .venv
+```{bash}
+git clone https://github.com/MCDagro3/proyecto_agronomia
 ```
 
-En Windows PowerShell:
+Una vez clonado el proyecto. Para la replicación de nuestro necesitaremos
 
-```powershell
-.venv\Scripts\Activate.ps1
-```
+* uv
+* Python. (Si no está instalado, uv se encargaŕa de instalarlo)
+
+
+Además de seguir los siguientes pasos. 
 
 ## Instalar dependencias
 
+Dentro de la carpeta del proyecto vamos a construir el entorno virtual .venv.
+
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
-El proyecto se instala como paquete editable mediante la entrada:
-
-```text
--e .
-```
-
-incluida en `requirements.txt`.
-
-Esto permite utilizar las funciones del proyecto directamente desde
-las notebooks:
-
-```python
-from proyecto_agronomia.dataset import descargar_datos_agricolas
-
-from proyecto_agronomia.features import (
-    construir_historico_agricola,
-    generar_features_agricolas,
-)
-```
-
----
 
 # Objetivo de modelado
 
-El modelado estima el rendimiento de los cultivos con información agrícola,
-climática, edafológica e histórica. Los modelos entrenados se guardan en
-`models/rendimiento/` y se utilizan para construir escenarios de intercambio
-entre cultivos con modelo disponible.
+Una etapa posterior utilizará técnicas estadísticas y de aprendizaje
+automático para estudiar la relación entre las características
+agrícolas y climáticas y los resultados de producción.
 
-La variable objetivo preparada para el entrenamiento es:
+Una variable objetivo candidata es:
 
 ```text
-Rendimiento_modelado
+TasaCosecha = Cosechada / Sembrada
 ```
 
 Entre las posibles variables explicativas se encuentran:
@@ -576,13 +485,12 @@ Entre las posibles variables explicativas se encuentran:
 - estado;
 - temperatura;
 - precipitación;
-- composición y textura del suelo;
-- cobertura de suelo según MapBiomas;
-- rendimiento anterior, media histórica y variabilidad histórica.
+- evapotranspiración;
+- otras variables derivadas durante el análisis exploratorio.
 
-Las variables históricas se calculan exclusivamente con observaciones
-anteriores al año de cada registro para evitar fuga temporal de información.
-
+La selección definitiva de variables y modelos se realizará después de
+completar la integración, el análisis exploratorio y la evaluación de
+posibles problemas de fuga de información.
 
 
 # Project Organization
@@ -606,9 +514,6 @@ anteriores al año de cada registro para evitar fuga temporal de información.
 │   ├── processed/          <- Canonical datasets for analysis/modeling
 │   │   ├── agricultura_features.csv
 │   │   ├── agricultura_clima_2003_2025.csv
-│   │   ├── agricultura_clima_edafologia_2003_2025.csv
-│   │   ├── agricultura_clima_edafologia_historial_2003_2025.csv
-│   │   ├── agricultura_modelado_2003_2025.csv
 │   │   └── clima_nasa/
 │   │       └── clima_municipal_mensual_2002_2025.csv
 │   │
@@ -630,15 +535,8 @@ anteriores al año de cada registro para evitar fuga temporal de información.
 ├── notebooks/              <- Reproducible Jupyter notebooks
 │   ├── descarga_agricola.ipynb
 │   ├── descarga_clima_nasa.ipynb
-│   ├── descarga_edafologia.ipynb
-│   ├── descarga_mapbiomas.ipynb
-│   ├── descargar_inegi.ipynb
-│   ├── integracion_datasets.ipynb
-│   ├── calidad_datos.ipynb
-│   ├── analisis_exploratorio.ipynb
-│   ├── preparacion_modelado.ipynb
-│   ├── entrenamiento_cultivos_principales.ipynb
-│   └── redistribucion_cultivos.ipynb
+│   ├── integracion_agricultura_clima.ipynb
+│   └── analisis_exploratorio.ipynb
 │
 ├── references/             <- Data dictionaries and supporting material
 │
@@ -647,19 +545,19 @@ anteriores al año de cada registro para evitar fuga temporal de información.
 │
 ├── tests/
 │
-└── src/                    <- Reusable Python source code
-    ├── agro/
-    │   └── ingesta.py       <- Programmatic acquisition pipeline
-    ├── datasets/            <- Agriculture, climate, soil, INEGI and MapBiomas
-    ├── processing/          <- Integration and feature preparation
-    ├── modeling/            <- Training, registry and redistribution
-    └── proyecto_agronomia/
-        ├── config.py        <- Paths and project configuration
-        ├── plots.py         <- Visualization functions
-        └── validation.py    <- Data-quality schemas and reports
-```
+└── src/                     <- Reusable Python source code
+    ├── agro/                <- Auto Project Scripts
+    ├── proyecto_agronomia/  <- Configuration Project
+    ├── datasets/            <- Data acquisition
+    │   └── clima_nasa.py    <- NASA POWER download and aggregation
+    |   processing/          <- Data processing
+    │   modeling/            <- Crops Distribution Model
+        ├── __init__.py
+        ├── train.py         <- Model training
+        └── predict.py       <- Model inference
+```    
 
----
+
 
 ## Licencia
 
