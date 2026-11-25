@@ -23,3 +23,24 @@
 .models-slide{background:#edf0e6}.models-layout{display:grid;grid-template-columns:1fr 1fr;gap:6vw;align-items:center}.model-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:28px}.model-kpis article{padding:15px;border-top:2px solid var(--clay);background:rgba(255,255,255,.7)}.model-kpis strong,.model-kpis span{display:block}.model-kpis strong{color:var(--clay);font:500 clamp(1.7rem,2.8vw,2.7rem) Georgia;line-height:1}.model-kpis span{margin-top:7px;color:var(--muted);font-size:.7rem;line-height:1.35}.model-kpis code{font-size:.65rem}.model-pipeline{display:grid;grid-template-columns:1fr 1fr;gap:10px}.model-pipeline article{padding:18px;border:1px solid var(--line);background:var(--paper)}.model-pipeline small,.model-pipeline b,.model-pipeline span{display:block}.model-pipeline small{color:var(--clay);font-size:.65rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.model-pipeline b{margin:6px 0;font:500 1.15rem Georgia}.model-pipeline span{color:var(--muted);font-size:.77rem;line-height:1.5}.model-rule{margin-top:32px;padding:14px 18px;border-left:4px solid var(--forest);background:rgba(255,255,255,.58);color:var(--muted);font-size:.82rem}.model-rule b{color:var(--forest)}
 .redistribution-slide{justify-content:flex-start;color:var(--cream);background:#243b34}.redistribution-heading{display:grid;grid-template-columns:1fr 390px;gap:4vw;align-items:end}.redistribution-heading h2{font-size:clamp(2.2rem,4vw,4.4rem)}.redistribution-heading p{max-width:790px;color:rgba(255,255,255,.68)}.redistribution-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.redistribution-kpis article{padding:12px;border-top:2px solid var(--gold);background:rgba(255,255,255,.06)}.redistribution-kpis strong,.redistribution-kpis span{display:block}.redistribution-kpis strong{color:var(--gold);font:500 1.55rem Georgia}.redistribution-kpis span{margin-top:4px;color:rgba(255,255,255,.58);font-size:.64rem}.redistribution-tabs{display:flex;justify-content:flex-end;gap:7px;margin-top:10px}.redistribution-tabs button{padding:8px 12px;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;cursor:pointer}.redistribution-tabs button.active{border-color:var(--lime);background:var(--lime);color:var(--ink)}.redistribution-panel{display:none}.redistribution-panel.active{display:block}.redistribution-panel figure{margin:10px auto 0;padding:7px;width:min(1180px,100%);background:#fff;box-shadow:var(--shadow)}.redistribution-panel img{display:block;width:100%;height:min(53vh,570px);object-fit:contain}.redistribution-panel figcaption{padding:7px 5px 1px;color:var(--muted);font-size:.68rem}.scenario-caution{margin:9px auto 0;width:min(1180px,100%);color:rgba(255,255,255,.62);font-size:.72rem}
 @media(max-width:900px){.models-layout,.redistribution-heading{grid-template-columns:1fr}.model-kpis{grid-template-columns:1fr 1fr}.redistribution-kpis{grid-template-columns:1fr 1fr}.redistribution-tabs{justify-content:flex-start}.redistribution-panel img{height:auto}}
+.quality-schema.rules b{font-size:1.08rem;line-height:1.25}
+.quality-schema.rules i{line-height:1.5}
+.quality-schema code{font-size:.68rem;color:var(--lime)}
+.mapbiomas-slide{color:var(--cream);background:linear-gradient(135deg,#1c3a2a 0%,#2a4d31 60%,#3a5a34 100%)}
+.mapbiomas-layout{display:grid;grid-template-columns:1fr 1fr;gap:6vw;align-items:center}
+.mapbiomas-intro h2{font-size:clamp(2.3rem,4vw,4.4rem)}
+.mapbiomas-intro .lead b{color:var(--lime);font-weight:600}
+.mapbiomas-facts{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.mapbiomas-facts span{padding:11px 13px;border:1px solid rgba(255,255,255,.2);font-size:.78rem;color:rgba(255,255,255,.72)}
+.mapbiomas-facts b{color:var(--gold)}
+.mapbiomas-masks{display:grid;gap:10px}
+.mapbiomas-masks article,.mapbiomas-rules article{padding:16px 18px;border-top:2px solid var(--gold);background:rgba(255,255,255,.07)}
+.mapbiomas-masks small,.mapbiomas-rules small{display:block;margin-bottom:6px;color:var(--lime);font-size:.66rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.mapbiomas-masks b{display:block;font:500 1.12rem Georgia}
+.mapbiomas-masks span b{display:inline;font:inherit;font-weight:700;color:var(--gold)}
+.mapbiomas-masks span,.mapbiomas-rules span{display:block;margin-top:6px;color:rgba(255,255,255,.68);font-size:.78rem;line-height:1.5}
+.mapbiomas-rules{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:30px}
+.mapbiomas-rules article{border-top-color:var(--lime)}
+.mapbiomas-rules code{font-size:.72rem;color:var(--lime)}
+@media(max-width:1100px){.mapbiomas-layout{grid-template-columns:1fr}.mapbiomas-rules{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){.mapbiomas-rules{grid-template-columns:1fr}}
