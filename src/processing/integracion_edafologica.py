@@ -5,8 +5,8 @@ from collections.abc import Mapping
 import geopandas as gpd
 import pandas as pd
 
-from proyecto_agronomia.datasets.edafologia import GRUPOS_SUELO_WRB
-from proyecto_agronomia.datasets.mapbiomas import RESPALDOS_MASCARA
+from datasets.edafologia import GRUPOS_SUELO_WRB
+from datasets.mapbiomas import RESPALDOS_MASCARA
 
 VALORES_SIN_CLASIFICACION = {"", "N", "N/A", "NA"}
 

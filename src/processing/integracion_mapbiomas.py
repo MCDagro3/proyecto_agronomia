@@ -33,7 +33,7 @@ from proyecto_agronomia.config import (
     MAPBIOMAS_RAW_DIR,
     MAPBIOMAS_VENTANA_ANIOS,
 )
-from proyecto_agronomia.datasets.mapbiomas import (
+from datasets.mapbiomas import (
     CLAVE_NACIONAL,
     MASCARAS_MAPBIOMAS,
     listar_rasters_mapbiomas,

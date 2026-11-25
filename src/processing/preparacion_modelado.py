@@ -38,8 +38,19 @@ COLUMNAS_HISTORICAS = [
     "rendimiento_hist_desviacion",
     "rendimiento_hist_cv",
 ]
+COLUMNAS_INTEGRACION = [
+    "precipitacion_ciclo_mm",
+    "temperatura_media_ciclo_c",
+    "grupo_suelo_dominante",
+    "nombre_suelo_wrb",
+    "mascara",
+    "area_mascara_ha",
+    "suelo_fuente",
+]
 COLUMNAS_REQUERIDAS = {
     *CLAVES_HISTORIA_MODELO,
+    *COLUMNAS_HISTORICAS,
+    *COLUMNAS_INTEGRACION,
     "Anio",
     "Idestado",
     "Nomestado",
@@ -62,7 +73,10 @@ MINIMO_PERIODOS_HISTORIA = 3
 def _validar_columnas(datos: pd.DataFrame) -> None:
     faltantes = COLUMNAS_REQUERIDAS - set(datos.columns)
     if faltantes:
-        raise KeyError(f"Faltan columnas para preparar el modelado: {sorted(faltantes)}")
+        raise KeyError(
+            "La entrada debe ser el dataset integrado con historial. "
+            f"Faltan columnas para preparar el modelado: {sorted(faltantes)}"
+        )
 
 
 def _convertir_numericas(datos: pd.DataFrame) -> pd.DataFrame:
@@ -237,11 +251,13 @@ def generar_dataset_modelado(
     ruta_salida: Path = RUTA_SALIDA,
     minimo_periodos: int = MINIMO_PERIODOS_HISTORIA,
 ) -> pd.DataFrame:
-    """Carga el integrado, genera el producto de modelado y lo guarda en CSV."""
+    """Carga el integrado con historial, prepara el modelado y guarda el CSV."""
     ruta_entrada = Path(ruta_entrada)
     ruta_salida = Path(ruta_salida)
     if not ruta_entrada.is_file():
-        raise FileNotFoundError(f"No se encontró el dataset integrado: {ruta_entrada}")
+        raise FileNotFoundError(
+            f"No se encontró el dataset integrado con historial: {ruta_entrada}"
+        )
     if ruta_entrada.resolve() == ruta_salida.resolve():
         raise ValueError("La salida no puede sobrescribir el dataset integrado.")
 
