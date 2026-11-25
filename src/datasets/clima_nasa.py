@@ -479,6 +479,7 @@ def descargar_clima_nasa_periodos_por_celdas(
     )
     with requests.Session() as sesion:
         for numero, ((indice_lat, indice_lon), grupo) in enumerate(grupos, 1):
+            print(numero, ((indice_lat, indice_lon), grupo))
             celda_lat = float(grupo["celda_lat"].iloc[0])
             celda_lon = float(grupo["celda_lon"].iloc[0])
             archivo_2002 = NASA_POWER_RAW_DIR / (
