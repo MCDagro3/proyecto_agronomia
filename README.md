@@ -20,7 +20,7 @@ para mantener separadas las etapas de los datos
 
 ---
 
-#Motivación 
+# Motivación 
 
 México, según el DGSIAP, es el décimo productor agrícola a nivel mundial. Sin embargo, resulta curioso como paises como paises como Indonesia, Pakistan y Nigeria, siendo más pequeños, producen mayor cantidad. Considerando que Nigeria produce $30\%$ más que México siendo $50\%$ más pequeño motiva investigar si México tiene posibilidad a aumentar.
 

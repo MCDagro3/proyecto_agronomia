@@ -30,6 +30,9 @@ s2018 = INEGI_USO_REF + "1_250_000/serie_VII/889463842781_s.zip"
 
 USOV_API = [s2005, s2009, s2013, su2016, s2017, s2018]
 
+# Acceso a la API de MAPBIOMAS 
+MAPBIOMAS_API = "https://prd.plataforma.mapbiomas.org/api/v1/mexico"
+
 
 # Acceso a la API de NASA POWER
 NASA_POWER_API = "https://power.larc.nasa.gov/api/temporal/daily/point"

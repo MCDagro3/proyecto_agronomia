@@ -1,6 +1,7 @@
 # Descarga de los datos
 from config.parameters import DGSIAP_CATEGORY
 from datasources.dgsiap import scraper
+from datasources.mapbiomas import descargar_mapbiomas
 from config.links import EDAF_API, INEGI_MEXICO_REF, USOV_API
 from config.preloads import GALLERY
 from config.tools import download_file
@@ -51,3 +52,6 @@ for edaf in EDAF_API:
 for usov in USOV_API:
     print("Descargando ", usov)
     download_inegi(usov)
+
+# Descarga de Mapbiomas
+descargar_mapbiomas()
