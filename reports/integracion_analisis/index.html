@@ -14,7 +14,7 @@
     <div class="progress"><span id="progress-bar"></span></div>
   </header>
   <nav class="rail" aria-label="Secciones">
-    <a href="#calidad" aria-label="Calidad de datos"></a><a href="#agricultura" aria-label="Agricultura"></a><a href="#clima" aria-label="Clima"></a><a href="#mapbiomas" aria-label="MapBiomas"></a><a href="#suelo" aria-label="Suelo"></a><a href="#resultado" aria-label="Resultado final"></a><a href="#historial" aria-label="Historial"></a><a href="#territorio" aria-label="Territorio"></a><a href="#relaciones" aria-label="Relaciones"></a><a href="#estabilidad" aria-label="Estabilidad"></a><a href="#modelos" aria-label="Modelos"></a><a href="#redistribucion" aria-label="Redistribución"></a><a href="#conclusion" aria-label="Conclusión"></a>
+    <a href="#calidad" aria-label="Calidad de datos"></a><a href="#agricultura" aria-label="Agricultura"></a><a href="#clima" aria-label="Clima"></a><a href="#mapbiomas" aria-label="MapBiomas"></a><a href="#suelo" aria-label="Suelo"></a><a href="#resultado" aria-label="Resultado final"></a><a href="#historial" aria-label="Historial"></a><a href="#territorio" aria-label="Territorio"></a><a href="#produccion" aria-label="Producción territorial y clima"></a><a href="#relaciones" aria-label="Relaciones"></a><a href="#estabilidad" aria-label="Estabilidad"></a><a href="#modelos" aria-label="Modelos"></a><a href="#redistribucion" aria-label="Redistribución"></a><a href="#conclusion" aria-label="Conclusión"></a>
   </nav>
 
   <main>
@@ -138,8 +138,20 @@
       <figure class="wide-media"><img id="territory-media" src="../figures/cultivos_anual_2003_2025.gif" alt="Animación anual de cultivos dominantes en México"><figcaption id="territory-caption">Cultivo dominante municipal · evolución anual 2003—2025</figcaption></figure>
     </section>
 
+    <section id="produccion" class="slide production-slide">
+      <div class="section-number">09 · Quién produce más y bajo qué clima</div>
+      <div class="production-heading">
+        <div><h2>La producción tiene líderes territoriales y térmicos</h2><p>Los volúmenes se comparan únicamente entre registros expresados en toneladas y representan el acumulado 2003—2025. Producción total no equivale a rendimiento: también refleja extensión sembrada, persistencia y escala territorial.</p></div>
+        <div class="production-note"><b>769,099</b><span>registros comparables en toneladas</span><small>Frío &lt; 15 °C · templado 15—&lt;22 °C · cálido ≥ 22 °C</small></div>
+      </div>
+      <div class="production-tabs"><button class="active" data-production="territories">Territorios líderes</button><button data-production="thermal">Clima y cultivos</button></div>
+      <div id="production-territories" class="production-panel active"><figure><img src="../figures/produccion_estados_municipios_2003_2025.png" alt="Estados y municipios de México con mayor producción agrícola acumulada entre 2003 y 2025"><figcaption>Estados y municipios con mayor volumen acumulado · únicamente registros en toneladas</figcaption></figure></div>
+      <div id="production-thermal" class="production-panel"><figure><img src="../figures/cultivos_climas_frios_calidos_2003_2025.png" alt="Cultivos con mayor producción en ambientes fríos y cálidos"><figcaption>Cultivos dominantes por ambiente térmico del ciclo · asociación descriptiva, no causal</figcaption></figure></div>
+      <p class="production-caution">Lectura: los rankings muestran concentración productiva; no prueban que un territorio o clima sea más eficiente. El rendimiento y la estabilidad se analizan por separado.</p>
+    </section>
+
     <section id="relaciones" class="slide relations-slide">
-      <div class="section-number">09 · Correlación como mapa de preguntas</div>
+      <div class="section-number">10 · Correlación como mapa de preguntas</div>
       <div class="relations-layout">
         <div><h2>Las relaciones fuertes no siempre son descubrimientos</h2><p class="lead dark">Superficie sembrada y cosechada comparten definición; producción y valor también. La matriz ayuda a detectar estructura, pero no demuestra causalidad.</p><div class="relation-kpis"><article><strong>0.96</strong><span>sembrada ↔ cosechada</span></article><article><strong>0.88</strong><span>producción ↔ valor</span></article><article><strong>0.98</strong><span>rendimiento ↔ historial</span></article></div><p class="caution">Por eso se añadieron matrices seleccionables por cultivo y asociaciones mixtas para variables edafológicas categóricas.</p></div>
         <figure class="media-card correlation"><img src="../figures/matriz_correlacion_agricola.png" alt="Matriz de correlación agrícola de Spearman"><figcaption>Correlación nacional de Spearman · asociación no implica causalidad</figcaption></figure>
@@ -147,7 +159,7 @@
     </section>
 
     <section id="estabilidad" class="slide stability-slide">
-      <div class="section-number light">10 · Rendimiento, estabilidad y riesgo</div>
+      <div class="section-number light">11 · Rendimiento, estabilidad y riesgo</div>
       <div class="stability-heading"><div><h2>Producir más no significa producir de forma estable</h2><p>El coeficiente de variación distingue municipios consistentes de municipios volátiles. Los siniestros y anomalías climáticas aportan otra lectura del riesgo.</p></div><div class="media-tabs secondary"><button class="active" data-evidence="stability">Estabilidad</button><button data-evidence="risk">Siniestros</button><button data-evidence="series">Series</button></div></div>
       <div id="evidence-stability" class="evidence-panel active">
         <div class="stability-control"><label for="stability-crop">Cultivo</label><select id="stability-crop" aria-label="Seleccionar cultivo para el mapa de estabilidad"></select></div>
@@ -156,12 +168,17 @@
           <aside class="stability-stats" aria-live="polite"><article><strong id="presence-count">—</strong><span>municipios con presencia histórica</span></article><article><strong id="median-cv">—</strong><span>coeficiente de variación mediano</span></article><article><strong id="median-yield">—</strong><span>rendimiento histórico mediano (t/ha)</span></article><p id="stability-reading"></p></aside>
         </div>
       </div>
-      <div id="evidence-risk" class="evidence-panel"><figure class="wide-media evidence-media"><img src="../figures/siniestros_anomalias_climaticas.png" alt="Relación entre siniestros y anomalías climáticas"><figcaption>Superficie siniestrada frente a anomalías municipales de clima</figcaption></figure></div>
+      <div id="evidence-risk" class="evidence-panel">
+        <div class="risk-layout">
+          <figure class="risk-media"><img src="../figures/siniestros_anomalias_climaticas.png" alt="Superficie siniestrada y desviaciones de precipitación y temperatura respecto al promedio local"><figcaption>Cada punto es un año · la línea discontinua marca las condiciones promedio</figcaption></figure>
+          <aside class="risk-reading"><h3>Cómo leerla</h3><p><b>Izquierda de cero:</b> más seco o frío que el promedio 2003—2025 del mismo municipio y ciclo.</p><p><b>Derecha de cero:</b> más lluvioso o cálido que ese promedio local.</p><p><b>Más arriba:</b> mayor superficie nacional siniestrada, expresada en millones de hectáreas.</p><p><b>ρ de Spearman:</b> resume la asociación monotónica; no demuestra causalidad.</p><small>La precipitación se expresa en porcentaje para comparar regiones secas y húmedas sin mezclar directamente escalas de milímetros.</small></aside>
+        </div>
+      </div>
       <div id="evidence-series" class="evidence-panel"><figure class="wide-media evidence-media"><img src="../figures/series_superficie_produccion_rendimiento.png" alt="Series de superficie, producción y rendimiento"><figcaption>Trayectoria productiva de los cultivos principales</figcaption></figure></div>
     </section>
 
     <section id="modelos" class="slide models-slide">
-      <div class="section-number">11 · Modelos de rendimiento</div>
+      <div class="section-number">12 · Modelos de rendimiento</div>
       <div class="models-layout">
         <div>
           <h2>Un modelo por cultivo, validado en tiempo y territorio</h2>
@@ -183,7 +200,7 @@
     </section>
 
     <section id="redistribucion" class="slide redistribution-slide">
-      <div class="section-number light">12 · Intercambios territoriales condicionados</div>
+      <div class="section-number light">13 · Intercambios territoriales condicionados</div>
       <div class="redistribution-heading">
         <div><h2>Intercambiar superficie, no expandir la frontera agrícola</h2><p>La optimización conserva la superficie de cada municipio–ciclo–modalidad y la superficie nacional de cada cultivo. El escenario intermedio recorre 25 % del camino entre la distribución observada y el óptimo estimado.</p></div>
         <div class="redistribution-kpis"><article><strong>+6.48 %</strong><span>producción predicha</span></article><article><strong>1.89 M ha</strong><span>superficie reasignada</span></article><article><strong>146</strong><span>municipios cambian de dominante</span></article></div>
@@ -195,7 +212,7 @@
     </section>
 
     <section id="conclusion" class="slide final">
-      <div class="section-number light">13 · Lo que queda listo</div>
+      <div class="section-number light">14 · Lo que queda listo</div>
       <div class="final-grid">
         <div><h2>Un dataset para preguntar mejor, no para saltar a conclusiones</h2><p class="lead">La integración conserva trazabilidad y evita fuga temporal. La exploración identifica señales que después deben validarse con modelos, incertidumbre y conocimiento local.</p></div>
         <div class="deliverables"><article><b>Dataset base</b><code>agricultura_clima_edafologia_2003_2025.csv</code><span>integración trazable</span></article><article><b>Dataset para modelado</b><code>agricultura_modelado_2003_2025.csv</code><span>calidad · historial · objetivo homogéneo</span></article><article><b>Modelos registrados</b><code>models/rendimiento/</code><span>artefactos y métricas por cultivo</span></article><article><b>Escenarios</b><code>redistribucion_cultivos_principales_2025.csv</code><span>base · conservador · intermedio · exploratorio</span></article></div>

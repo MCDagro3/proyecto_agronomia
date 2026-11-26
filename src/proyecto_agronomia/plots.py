@@ -1403,7 +1403,13 @@ def crear_siniestros_anomalias_clima(
     agricultura: pd.DataFrame,
     ruta_salida: str | Path | None = None,
 ):
-    """Relaciona superficie siniestrada nacional con anomalias climaticas."""
+    """Relaciona siniestros nacionales con desviaciones climáticas locales.
+
+    La precipitación se expresa como cambio porcentual respecto al promedio
+    histórico de cada municipio (y ciclo, cuando se usa clima por ciclo). Así
+    no se promedian directamente milímetros de regiones con escalas de lluvia
+    muy distintas. La temperatura conserva la diferencia en grados Celsius.
+    """
     meses = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
     temp = [f"temperatura_{mes}_c" for mes in meses]
     lluvia = [f"precipitacion_{mes}_mm" for mes in meses]
@@ -1449,35 +1455,72 @@ def crear_siniestros_anomalias_clima(
         )
         grupos_clima = ["cvegeo", "Nomcicloproductivo"]
 
+    grupos = clima.groupby(grupos_clima, observed=True)
+    temperatura_base = grupos["temperatura_referencia_c"].transform("mean")
+    precipitacion_base = grupos["precipitacion_referencia_mm"].transform("mean")
     clima["anomalia_temperatura_c"] = (
-        clima["temperatura_referencia_c"]
-        - clima.groupby(grupos_clima, observed=True)["temperatura_referencia_c"]
-        .transform("mean")
+        clima["temperatura_referencia_c"] - temperatura_base
     )
-    clima["anomalia_precipitacion_mm"] = (
-        clima["precipitacion_referencia_mm"]
-        - clima.groupby(grupos_clima, observed=True)["precipitacion_referencia_mm"]
-        .transform("mean")
+    clima["anomalia_precipitacion_pct"] = (
+        100
+        * (clima["precipitacion_referencia_mm"] - precipitacion_base)
+        / precipitacion_base.where(precipitacion_base.gt(0))
     )
     clima_anual = clima.groupby("Anio", as_index=False).agg(
         anomalia_temperatura_c=("anomalia_temperatura_c", "mean"),
-        anomalia_precipitacion_mm=("anomalia_precipitacion_mm", "mean"),
+        anomalia_precipitacion_pct=("anomalia_precipitacion_pct", "mean"),
     )
     siniestros = agricultura.assign(
         Siniestrada=pd.to_numeric(agricultura["Siniestrada"], errors="coerce")
     ).groupby("Anio", as_index=False)["Siniestrada"].sum()
     resumen = clima_anual.merge(siniestros, on="Anio", validate="one_to_one")
-    fig, ejes = plt.subplots(1, 2, figsize=(14, 5.5))
-    for eje, columna, etiqueta, color in (
-        (ejes[0], "anomalia_precipitacion_mm", "Anomalia de precipitacion (mm)", "#3c78a8"),
-        (ejes[1], "anomalia_temperatura_c", "Anomalia de temperatura (°C)", "#d46a4c"),
+    resumen["superficie_siniestrada_millones_ha"] = resumen["Siniestrada"] / 1e6
+    fig, ejes = plt.subplots(1, 2, figsize=(14, 5.8))
+    for eje, columna, etiqueta, titulo, color in (
+        (
+            ejes[0], "anomalia_precipitacion_pct",
+            "Desviación media de precipitación respecto al promedio local (%)",
+            "Años más secos ← 0 → Años más lluviosos", "#3c78a8",
+        ),
+        (
+            ejes[1], "anomalia_temperatura_c",
+            "Desviación media de temperatura respecto al promedio local (°C)",
+            "Años más fríos ← 0 → Años más cálidos", "#d46a4c",
+        ),
     ):
-        eje.scatter(resumen[columna], resumen["Siniestrada"], s=55, color=color, alpha=0.8)
+        rho = resumen[columna].rank().corr(resumen["Siniestrada"].rank())
+        eje.scatter(
+            resumen[columna], resumen["superficie_siniestrada_millones_ha"],
+            s=58, color=color, alpha=0.82, edgecolor="white", linewidth=0.5,
+        )
+        eje.axvline(0, color="#5d6863", linewidth=1.1, linestyle="--", alpha=0.8)
         for _, fila in resumen.nlargest(3, "Siniestrada").iterrows():
-            eje.annotate(int(fila["Anio"]), (fila[columna], fila["Siniestrada"]), xytext=(4, 4), textcoords="offset points", fontsize=8)
-        eje.set_xlabel(etiqueta); eje.set_ylabel("Superficie siniestrada (ha)"); eje.grid(alpha=0.2)
-    fig.suptitle("Superficie siniestrada y anomalias climaticas nacionales", fontsize=16)
-    fig.tight_layout()
+            eje.annotate(
+                int(fila["Anio"]),
+                (fila[columna], fila["superficie_siniestrada_millones_ha"]),
+                xytext=(5, 5), textcoords="offset points", fontsize=8,
+            )
+        eje.text(
+            0.03, 0.96, f"ρ Spearman = {rho:.2f}", transform=eje.transAxes,
+            va="top", fontsize=9, color="#35443e",
+            bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.8},
+        )
+        eje.set_title(titulo, fontsize=11)
+        eje.set_xlabel(etiqueta)
+        eje.set_ylabel("Superficie siniestrada (millones de ha)")
+        eje.grid(alpha=0.2)
+    fig.suptitle(
+        "Superficie siniestrada y desviaciones climáticas nacionales",
+        fontsize=16,
+    )
+    fig.text(
+        0.5, 0.015,
+        "Cada punto representa un año. Las desviaciones se calculan primero "
+        "contra el promedio 2003–2025 de cada municipio/ciclo y luego se "
+        "promedian nacionalmente. Asociación no implica causalidad.",
+        ha="center", fontsize=9, color="#4f5d57",
+    )
+    fig.tight_layout(rect=(0, 0.07, 1, 0.94))
     if ruta_salida is not None:
         ruta_salida = Path(ruta_salida); ruta_salida.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(ruta_salida, dpi=170, bbox_inches="tight")

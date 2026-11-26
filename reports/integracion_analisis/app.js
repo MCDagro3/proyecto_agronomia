@@ -60,6 +60,13 @@ document.querySelectorAll('[data-climate-view]').forEach(button => button.addEve
   });
 }));
 
+document.querySelectorAll('[data-production]').forEach(button => button.addEventListener('click', () => {
+  document.querySelectorAll('[data-production]').forEach(item => item.classList.toggle('active', item === button));
+  document.querySelectorAll('.production-panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === `production-${button.dataset.production}`);
+  });
+}));
+
 document.querySelectorAll('[data-redistribution]').forEach(button => button.addEventListener('click', () => {
   document.querySelectorAll('[data-redistribution]').forEach(item => item.classList.toggle('active', item === button));
   document.querySelectorAll('.redistribution-panel').forEach(panel => {
